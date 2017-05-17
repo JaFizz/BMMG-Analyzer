@@ -1,0 +1,3 @@
+mathijsisgek = true
+
+print(mathijsisgek)
