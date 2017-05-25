@@ -1,64 +1,87 @@
 #Mathijs Schouten
 
-#imports
+#LIBRARIES
 from tkinter import filedialog
 import sys
 import sqlite3
+from random import randint
+import time
+import datetime
 
-#functies
+#VARIABELEN
+d = datetime.datetime.now()
+datum = "%s/%s/%s" %(d.day, d.month, d.year)
+tijd = time.strftime("%X")
 
-#nieuwe casus
+#SQL
+kolomCasusNaam = 'casus_naam'
+kolomOnderzoekerNaam = 'onderzoeker_naam'
+intDataType = 'INTEGER'
+floatDataType = 'REAL'
+nullDataType = 'NULL'
+textDataType = 'TEXT'
+dataBlob = 'BLOB'
+
+#FUNCTIE nieuwe casus
 def nieuweCasus():
-    #imageBestand openen
-    print("Nieuwe Casus: Geef image-bestand op:")
-    imageBestand = filedialog.askopenfilename(filetypes=[(".img, .raw, .E01, etc..", ["*.img","*.raw"],)], title='Geef image-bestand op:')
 
-    #foutafvanging
-    if not imageBestand:
-        sys.exit("Geen image-bestand geselecteerd, het programma wordt afgesloten")
+    casusNaam = str(input("Casus Naam: ")).replace(" ", "_")
+    if(casusNaam == ""):
+        casusNaam = ("BMMG_Casus_" + str(randint(0,99999999)))
+        print("Casus Naam: " + casusNaam)
 
-    #casus details
-    casusNaam = str(input("Geef een casusnaam op: "))
-    onderzoekerNaam = str(input("Geef onderzoeker naam op: "))
-
-    #casus opslaglocatie
-    print("Geef aan waar u de casus wilt opslaan:")
-    opslagLocatie = filedialog.askdirectory(title='Geef aan waar u de casus wilt opslaan:')
+    onderzoekerNaam = str(input("Onderzoeker Naam: "))
+    print("Welkom " + onderzoekerNaam + ". De casus is aangemaakt.")
 
     #databasebestand
-    databaseBestand = str(input("Vul een naam in voor het opslagbestand: "))
+    databaseBestand = casusNaam + ".sqlite"
 
     #connectie maken naar SQLite database
-    conn = sqlite3.connect(databaseBestand)
-    c = conn.cursor()
+    connectie = sqlite3.connect(databaseBestand)
+    #cursor object aanmaken
+    c = connectie.cursor()
 
-    #nieuwe database maken
-    c.execute('CREATE TABLE {tn} ({nf} {ft})'\
-              .format(tn=casusNaam, nf='casusNaam', ft='TEXT'))
+    #nieuwe database maken met casusnaam kolom
+    c.execute('CREATE TABLE {tabelnaam} ({kolomnaam} {datatype})'\
+              .format(tabelnaam=casusNaam, kolomnaam=kolomCasusNaam, datatype=textDataType))
 
-    c.execute("ALTER TABLE {tn} ADD COLUMN '{cn}' {ct}".\
-            format(tn=casusNaam, cn='onderzoeker_column', ct='TEXT'))
+    #niewe kolommen toevoegen
+    c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"\
+              .format(tabelnaam=casusNaam, kolomnaam=kolomOnderzoekerNaam, datatype=textDataType))
 
-    c.execute("INSERT INTO {tn} ({idf}), {cn}) VALUES ('test')".\
-              format(tn=casusNaam, idf='onderzoeker_column', cn='onderzoeker_column'))
+    #database vullen
+    c.execute("INSERT INTO {tabelnaam} ({kolomnaam1}, {kolomnaam2}) VALUES ('{value1}', '{value2}')"\
+              .format(tabelnaam=casusNaam, kolomnaam1=kolomCasusNaam, kolomnaam2=kolomOnderzoekerNaam, value1=casusNaam, value2=onderzoekerNaam))
 
-    c.execute('SELECT * FROM {tn}'.\
-              format(tn=casusNaam))
+    ##data opvragen uit de database en printen op scherm
+    #c.execute('SELECT * FROM {tabelnaam}'. \
+    #          format(tabelnaam=casusNaam))
+    #dataUitDB = c.fetchall()
+    #print(dataUitDB)
 
-    allerijen = c.fetchall()
-    print(allerijen)
-    conn.commit()
-    conn.close()
+    #commit en close
+    connectie.commit()
+    connectie.close()
 
-#bestaande casus
+    ##imagebestand openen
+    #print("Nieuwe Casus: Geef image-bestand op:")
+    #imageBestand = filedialog.askopenfilename(filetypes=[(".img, .raw, .E01, etc..", ["*.img","*.raw"],)], title='Geef image-bestand op:')
+
+    #if not imageBestand:
+    #    sys.exit("Geen image-bestand geselecteerd, het programma wordt afgesloten")
+
+    ##casus opslaglocatie
+    #print("Geef aan waar u de casus wilt opslaan:")
+    #opslagLocatie = filedialog.askdirectory(title='Geef aan waar u de casus wilt opslaan:')
+
+#FUNCTIE bestaande casus
 def bestaandeCasus():
-    print("Existing Case")
+    print("Bestaande Casus")
 
-
-#Main Code
+#MAIN CODE
 print("Hallo, wat wilt u doen? \n")
-print("Optie 1: Nieuwe casus")
-print("Optie 2: Bestaande casus \n")
+print("Optie 1: Een nieuwe casus toevoegen")
+print("Optie 2: Ga verder met een bestaande casus \n")
 
 try:
     optie = int(input("Optie: "))
