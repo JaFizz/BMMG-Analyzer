@@ -7,6 +7,7 @@ import sqlite3
 from random import randint
 import time
 import datetime
+import os
 
 #VARIABELEN
 d = datetime.datetime.now()
@@ -25,16 +26,19 @@ dataBlob = 'BLOB'
 #FUNCTIE nieuwe casus
 def nieuweCasus():
 
+    print("Een nieuwe casus toevoegen")
+
     casusNaam = str(input("Casus Naam: ")).replace(" ", "_")
     if(casusNaam == ""):
         casusNaam = ("BMMG_Casus_" + str(randint(0,99999999)))
         print("Casus Naam: " + casusNaam)
 
     onderzoekerNaam = str(input("Onderzoeker Naam: "))
-    print("Welkom " + onderzoekerNaam + ". De casus is aangemaakt.")
 
     #databasebestand
-    databaseBestand = casusNaam + ".sqlite"
+    databaseBestand = casusNaam + ".BMMG"
+
+    print("Welkom " + onderzoekerNaam + ". De casus is aangemaakt. De savefile: '" + databaseBestand + "', is aangemaakt.")
 
     #connectie maken naar SQLite database
     connectie = sqlite3.connect(databaseBestand)
@@ -76,9 +80,41 @@ def nieuweCasus():
 
 #FUNCTIE bestaande casus
 def bestaandeCasus():
-    print("Bestaande Casus")
+    print("Open een bestaande casus")
+
+    #databasebestand
+    databaseBestand = filedialog.askopenfilename(filetypes=[(".BMMG", ["*.BMMG"],)], title='Open een bestaande casus:')
+
+    casusNaam = os.path.basename(databaseBestand[:-5])
+
+    #connectie maken naar SQLite database
+    connectie = sqlite3.connect(databaseBestand)
+    #cursor object aanmaken
+    c = connectie.cursor()
+
+    #data opvragen uit de database en printen op scherm
+    c.execute('SELECT * FROM {tabelnaam}'. \
+              format(tabelnaam=casusNaam))
+    dataUitDB = c.fetchall()
+    print(dataUitDB)
+
+    #commit en close
+    connectie.commit()
+    connectie.close()
 
 #MAIN CODE
+print(
+" ____   __  __  __  __   _____                                _                        \n"
+"|  _ \ |  \/  ||  \/  | / ____|          /\                  | |                       \n"
+"| |_) || \  / || \  / || |  __  ______  /  \    _ __    __ _ | | _   _  ____ ___  _ __ \n"
+"|  _ < | |\/| || |\/| || | |_ ||______|/ /\ \  | '_ \  / _` || || | | ||_  // _ \| '__|\n"
+"| |_) || |  | || |  | || |__| |       / ____ \ | | | || (_| || || |_| | / /|  __/| |   \n"
+"|____/ |_|  |_||_|  |_| \_____|      /_/    \_\|_| |_| \__,_||_| \__, |/___|\___||_|   \n"
+"                                                                  __/ |                \n"
+"                                                                 |___/                 \n"
+"========================================================================================"
+)
+
 print("Hallo, wat wilt u doen? \n")
 print("Optie 1: Een nieuwe casus toevoegen")
 print("Optie 2: Ga verder met een bestaande casus \n")
