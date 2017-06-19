@@ -70,7 +70,9 @@ def nieuweCasusToevoegen():
     imageBestand = filedialog.askopenfilename(filetypes=[(".img, .raw, .E01, etc..", ["*.img","*.raw","*.txt","*.mp3"],)], title='Geef image-bestand op:')
 
     if not imageBestand:
-        sys.exit("Geen image-bestand geselecteerd, het programma wordt afgesloten")
+        print("Geen image-bestand geselecteerd, het programma wordt afgesloten")
+        time.sleep(5)
+        sys.exit()
 
     imageName1 = os.path.splitext(os.path.basename(imageBestand))[0]
     extensie = os.path.splitext(imageBestand)[1]
@@ -154,6 +156,11 @@ def werkMenu(casusNaam, connectie, c):
             c.execute('SELECT image_bestand FROM ImageBestand')
             ablob = c.fetchone()
             imageBestand.write(ablob[0])
+
+    #    try:
+        print("\nImagebestand is weggeschreven")
+    #    except IOError:
+    #        print("Geen imagebestand weggeschreven")
 
         werkMenu(casusNaam, connectie, c)
 
