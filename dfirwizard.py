@@ -21,11 +21,11 @@ for partition in partitionTable:
 
 filesystemObject = pytsk3.FS_Info(imagehandle, offset=1048576)
 
-fileobject = filesystemObject.open("C:/hiberfil.sys")
+fileobject = filesystemObject.open("/$MFT")
 print "\nFile Inode:",fileobject.info.meta.addr
 print "File Name:",fileobject.info.name.name
 print "File Creation Time:",datetime.datetime.fromtimestamp(fileobject.info.meta.crtime).strftime('%Y-%m-%d %H:%M:%S')
 
-outfile = open('hiberfil.sys', 'w')
+outfile = open('DFIRWizard-ouput', 'w')
 filedata = fileobject.read_random(0,fileobject.info.meta.size)
 outfile.write(filedata)
