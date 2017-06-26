@@ -4,10 +4,11 @@ Stap 1: Start het script
 Stap 2: Kies een optie uit het menu (zie #Opties)
 
 #Werkmap
-Bij het aanmaken van een nieuwe casus kiest u een locatie.
+Bij het aanmaken van een nieuwe casus kiest u een locatie. Hierin wordt een werkmap gegenereerd.
 
 #Casusmap
-In deze map wordt een casusmap gegenereerd waarin de savefile en extracties worden opgeslagen.
+In de werkmap wordt een casusmap gegenereerd die dezelfde naam draagt als de casus.
+In deze casusmap worden de savefile en extracties opgeslagen.
 
 #Savefile
 Wanneer er een nieuwe casus aangemaakt wordt, zal er een savefile gegenereerd worden.
@@ -15,11 +16,11 @@ Deze savefile heeft de extensie: '.BMMG'. Met dit bestand kunt u op elk gewenst 
 De savefile is terug te vinden in de casusmap in het mapje '/savefile'.
 
 #SQLite database
-De savefile is een SQLite database
+De savefile is een SQLite database.
 
 #Werkmenu
 Als u een nieuwe casus heeft aangemaakt of een bestaande casus opent, dan komt u in het werkmenu terecht.
-Het werkmenu heeft de volgende opties:
+Binen het werkmenu heeft de volgende opties:
 
 #Opties
 Optie 1: Casusnaam opvragen
