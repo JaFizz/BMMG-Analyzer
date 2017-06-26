@@ -1,7 +1,7 @@
 #Mathijs Schouten
 
 #LIBRARIES
-from tkinter import filedialog
+import tkFileDialog as filedialog
 import sys
 import sqlite3
 from random import randint

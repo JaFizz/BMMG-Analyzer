@@ -1,6 +1,6 @@
 import sh
 
-image = "/media/sf_sf/Windows10.E01"
+image = "/Windows10.E01"
 
 file = open("strings.txt","w")
 

@@ -9,29 +9,28 @@ import pyewf
 import binascii
 
 
-# Nodig voor Ewf
+# Nodig voor Ewf image formats
 class EwfImgInfo(pytsk3.Img_Info):
     def __init__(self, ewf_handle):
         self._ewf_handle = ewf_handle
         super(EwfImgInfo, self).__init__(url="", type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
 
-
 # imagebestand
-imagefile = "/media/sf_IPFIT5_Image/Windows10.E01"
-#imagefile = "/media/sf_fict/image.dd"
+imagefile = "/media/sf_sf/Windows10.E01"
 
-imagetype = "raw"
+# image handle
+imagehandle = pytsk3.Img_Info(imagefile)
 
 # E01:
-if imagetype == "e01":
-    imagefilename = pyewf.glob(imagefile)
-    handle = pyewf.handle()
-    handle.open(imagefilename)
-    image = EwfImgInfo(handle)
+#if imagetype == "e01":
+#    imagefilename = pyewf.glob(imagefile)
+#    handle = pyewf.handle()
+#    handle.open(imagefilename)
+#    image = EwfImgInfo(handle)
 
 # DD
-elif imagetype == "raw":
-    image = pytsk3.Img_Info(imagefile)
+#elif imagetype == "raw":
+#    image = pytsk3.Img_Info(imagefile)
 
 
 # Loop door een mapje
