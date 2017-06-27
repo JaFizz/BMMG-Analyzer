@@ -11,17 +11,19 @@ import os
 import pytsk3
 import binascii
 import pyewf
+import hashlib
 
 #VARIABELEN
 d = datetime.datetime.now()
 datum = "%s/%s/%s" %(d.day, d.month, d.year)
 tijd = time.strftime("%X")
-werkMap = "BMMG_Werkmap"
 
+#Mappen
+werkMap = "BMMG_Werkmap"
 saveFileMap = "/savefile/"
 extractsMap = "/extracts/"
 
-#SQL
+#SQL Tabelnamen en Kolomnamen
 kolomCasusNaam = 'casus_naam'
 kolomOnderzoekerNaam = 'onderzoeker_naam'
 kolomCasusMap = 'locatie_casusmap'
@@ -30,7 +32,16 @@ tabelImageBestand = "ImageBestand"
 kolomImageNaam = "image_naam"
 kolomImageLocatie = "image_locatie"
 
+tabelFiles = 'Files'
+kolomFileName = 'file_name'
+kolomFileHash = 'file_md5_hash'
+kolomFileExtension = 'file_extension'
+kolomFileAccesTime = 'file_acces_time'
+kolomFileModificationTime = 'file_modification_time'
+kolomFileCreationTime = 'file_creation_time'
+kolomFileSymbolicLink = 'file_symbolic_link'
 
+#SQL datatypes
 #kolomDataBLOB = 'data_blob'
 #intDataType = 'INTEGER'
 #floatDataType = 'REAL'
@@ -109,6 +120,7 @@ def nieuweCasusToevoegen():
     c.execute("INSERT INTO {tabelnaam} ({kolomnaam1}, {kolomnaam2}, {kolomnaam3}) VALUES ('{value1}', '{value2}', '{value3}')"
               .format(tabelnaam=casusNaamInfo, kolomnaam1=kolomCasusNaam, kolomnaam2=kolomOnderzoekerNaam,
                       kolomnaam3=kolomCasusMap, value1=casusNaam, value2=onderzoekerNaam, value3=casusMap))
+
 
     #commit
     connectie.commit()
@@ -200,77 +212,54 @@ def bestaandeCasusOpenen():
     #Naar het werkmenu
     werkMenu(casusNaam, connectie, c, imageBestand)
 
-
-def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
+def extractor(casusNaam, connectie, c, imageBestand):
     casusNaam = casusNaam
     connectie = connectie
     c = c
 
-    class EwfImgInfo(pytsk3.Img_Info):
-        def __init__(self, ewf_handle):
-                self._ewf_handle = ewf_handle
-                super(EwfImgInfo, self).__init__(url="", type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
-
-    #imagebestand
+    # imagebestand
     imageFile = imageBestand
-    #image handle
-    image = pytsk3.Img_Info(imageFile)
+    # image handle
+    imagehandle = pytsk3.Img_Info(imageFile)
 
-    #Loop door een mapje
     def checkDirectory(handle):
-
         for file in handle:
-
             if file.info.name.name in [".", ".."]:
                 continue
+
             else:
                 try:
                     ftype = file.info.meta.type
-                    #Als er een mapje is gevonden
+                    # Mapje gevonden
                     if ftype == pytsk3.TSK_FS_META_TYPE_DIR:
-                        print "Map gevonden"
+                        print "MAP GEVONDEN !!!"
                         #print directory naam
                         #print file.info.name.name
                         #geef directory naam mee aan functie om te doorzoeken
                         checkDirectory(file.as_directory())
 
-                    #Als er een bestand is gevonden
+                    # Bestand gevonden, doe er iets mee
                     else:
-                        #lees eerste 16 bytes van de file (header bytes)
                         header_bytes = file.read_random(0, 16)
-                        #maak hexwaarde hoofdletters
                         hexwaarde = binascii.hexlify(header_bytes).upper()
 
-                        #ENUMERATION van File Signatures
-
-                        exehex = '4D5A'                         #executables, DLL's, MUI's
-                        pdfhex = '25504446'                     #PDF
-                        jpeghex = 'FFD8FFDB'                    #JPEG
-                        jpeghex1 = 'FFD8FFE0'                   #JPEG
-                        jpeghex2 = 'FFD8FFE1'                   #JPEG
-                        pnghex1 = '89504E470D0A1A0A'            #PNG
-                        tifhex = '49492A00'                     #TIF
-                        tiffhex = '4D4D002A'                    #TIFF
-                        compoundhex = 'D0CF11E0A1B11AE1'        #Compound Files(DOC,XLS,PPT,MSG and other)
-                        txthex = '464F524D'                     #TXT
-                        rarhex = '526172211A0700'               #RAR
-                        rarhex2 = '526172211A070100'            #RAR
-                        vmdkhex = '4B444D'                      #VMDK
-                        sevenziphex = '377ABCAF271C'            #7Zip
-
-                        #zip file format and formats based on it
-                        #zip, jar, odt, ods, odp, docx, xlsx, pptx, vsdx, apk
-                        ziphex1 = '504B0304'
-                        ziphex2 = '504B0506'
-                        ziphex3 = '504B0708'
+                        exehex = '4D5A'
+                        pdfhex = '25504446'
+                        jpeghex = 'FFD8FFDB'  # jpeg
+                        jpeghex1 = 'FFD8FFE0'  # jpeg
+                        jpeghex2 = 'FFD8FFE1'  # jpeg
+                        pnghex1 = '89504E470D0A1A0A' #png
+                        tifhex = '49492A00'  # tif
+                        tiffhex = '4D4D002A'  # tiff
+                        compoundhex = 'D0CF11E0A1B11AE1'  # Compounds, doc, xls, ppt
+                        txthex = '464F524Dnnnnnnnn46545854'  # txt
 
                         def extract(filename):
-                            bestandLocatie = extractsLocatie + filename
-                            bestand = open(bestandLocatie, 'w')
+                            bestand = open(filename, 'w')
                             bestand.write(file.read_random(0, file.info.meta.size))
                             bestand.close()
-                            print filename+" extracted"
 
+                        #                    os.makedirs('/exports/')
                         #kijk of hexwaarde in fileheader voorkomt
                         if exehex in hexwaarde:
                             #print file.info.name.name + ' = een executable'
@@ -313,52 +302,175 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
                             filename = file.info.name.name
                             extract(filename)
 
-                        if rarhex in hexwaarde:
-                            filename = file.info.name.name
-                            extract(filename)
-
-                        if rarhex2 in hexwaarde:
-                            filename = file.info.name.name
-                            extract(filename)
-
-                        if vmdkhex in hexwaarde:
-                            filename = file.info.name.name
-                            extract(filename)
-
-                        if sevenziphex in hexwaarde:
-                            filename = file.info.name.name
-                            extract(filename)
-
-                        if ziphex1 in hexwaarde:
-                            filename = file.info.name.name
-                            extract(filename)
-
-                        if ziphex2 in hexwaarde:
-                            filename = file.info.name.name
-                            extract(filename)
-
-                        if ziphex3 in hexwaarde:
-                            filename = file.info.name.name
-                            extract(filename)
 
                 except:
                     print ""
 
 
-    #Partitie tabel ophalen met behulp van de handle
-    partitionTable = pytsk3.Volume_Info(image)
-    #blocksize ophalen
+    # partitie table
+    partitionTable = pytsk3.Volume_Info(imagehandle)
     bsize = partitionTable.info.block_size
 
-    #directory checker
     for part in partitionTable:
         print part
         try:
-            partitionHandle = pytsk3.FS_Info(image, offset=(part.start * bsize))
+            partitionHandle = pytsk3.FS_Info(imagehandle, offset=(part.start * bsize))
             directoryHandle = partitionHandle.open_dir(path='/')
             checkDirectory(directoryHandle)
         except IOError as error:
             print ""
+
+#def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
+#    casusNaam = casusNaam
+#    connectie = connectie
+#
+#    #Files tabel maken
+#    c.execute('CREATE TABLE {tabelnaam} ({kolomnaam} {datatype})'.format(tabelnaam=tabelFiles,
+#                                                                         kolomnaam=kolomFileName, datatype=textDataType))
+#    #Nieuwe kolommen toevoegen
+#    c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+#              .format(tabelnaam=tabelFiles, kolomnaam=kolomFileHash, datatype=textDataType))
+#    c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+#              .format(tabelnaam=tabelFiles, kolomnaam=kolomFileExtension, datatype=textDataType))
+#    c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+#              .format(tabelnaam=tabelFiles, kolomnaam=kolomFileAccesTime, datatype=textDataType))
+#    c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+#              .format(tabelnaam=tabelFiles, kolomnaam=kolomFileModificationTime, datatype=textDataType))
+#    c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+#              .format(tabelnaam=tabelFiles, kolomnaam=kolomFileCreationTime, datatype=textDataType))
+#
+#    #commit
+#    connectie.commit()
+#
+#    class EwfImgInfo(pytsk3.Img_Info):
+#        def __init__(self, ewf_handle):
+#                self._ewf_handle = ewf_handle
+#                super(EwfImgInfo, self).__init__(url="", type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
+#
+#    #imagebestand
+#    imageFile = imageBestand
+#    #image handle
+#    image = pytsk3.Img_Info(imageFile)
+#
+#    #Loop door een mapje
+#    def checkDirectory(handle):
+#
+#        for file in handle:
+#
+#            if file.info.name.name in [".", ".."]:
+#                continue
+#            else:
+#                try:
+#                    ftype = file.info.meta.type
+#                    #Als er een mapje is gevonden
+#                    if ftype == pytsk3.TSK_FS_META_TYPE_DIR:
+#                        print "Map gevonden"
+#                        #print directory naam
+#                        #print file.info.name.name
+#                        #geef directory naam mee aan functie om te doorzoeken
+#                        checkDirectory(file.as_directory())
+#
+#                    #Als er een bestand is gevonden
+#                    else:
+#                        #lees eerste 16 bytes van de file (header bytes)
+#                        header_bytes = file.read_random(0, 16)
+#                        #maak hexwaarde van de header_bytes, maakt ze ook hoofdletters
+#                        hexwaarde = binascii.hexlify(header_bytes).upper()
+#
+#                        print hexwaarde
+#
+#                        #ENUMERATION van File Signatures
+#                        hexwaardes = {
+#                            '4D5A' : 'EXE',
+#                            '25504446' : 'PDF',
+#                            'FFD8FFDB' : 'JPEG',
+#                            'FFD8FFE0' : 'JPEG',
+#                            'FFD8FFE1' : '',
+#                            '89504E470D0A1A0A' : 'PNG',
+#                            '49492A00' : 'TIF',
+#                            '4D4D002A' : 'TIFF',
+#                            'D0CF11E0A1B11AE1' : 'COMPOUND',
+#                            '464F524D' : 'TXT',
+#                            '526172211A0700' : 'RAR',
+#                            '526172211A070100' : 'RAR',
+#                            '4B444D' : 'VMDK',
+#                            '377ABCAF271C' : '7ZIP',
+#                            '504B0304': 'ZIP',
+#                            '504B0506': 'ZIP',
+#                            '504B0708': 'ZIP'
+#                        }
+#
+#                        print hexwaardes
+#
+#                        #Extract functie
+#                        def extract(filename):
+#                            bestand = open(filename, 'w')
+#                            bestand.write(file.read_random(0, file.info.meta.size))
+#                            bestand.close()
+#
+#                            ##1 Filename
+#                            ##is al meegegeven in de functie
+#                            ##2 hashwaarde MD5
+#                            ##pas berekenen na het extracten van de image
+#                            ##3 file extensie
+#                            #extensie = os.path.splitext(filename)[1]
+#                            ##4 access time
+#                            #accesTime = file.info.meta.atime
+#                            #accesTime = accesTime.astype("datetime64[s]")
+#                            ##5 modification time
+#                            #modificationTime = file.info.meta.mtime
+#                            ##6 creation time
+#                            #creationTime = file.info.meta.crtime
+#
+#                            #print filename
+#                            #print extensie
+#                            #print accesTime
+#                            #print modificationTime
+#                            #print creationTime
+#
+#                            ##extractslocatie + filename genereren
+#                            #bestandLocatie = extractsLocatie + filename
+#                            ##file aanmaken met write rechten
+#                            #bestand = open(bestandLocatie, 'rw')
+#                            ###file wegschrijven
+#                            #bestand.write(file.read_random(0, file.info.meta.size))
+#
+#                            ##MD5 hashwaarde berekenen
+#                            #hashwaardeMD5 = hashlib.md5(bestand).hexdigest()
+#
+#                            #bestand.close()
+#                            #print filename+" extracted"
+#
+#                            ##ImageBestand tabel vullen
+#                            #c.execute("INSERT INTO {tabelnaam} ({kolomnaam1},{kolomnaam2},{kolomnaam3},{kolomnaam4},{kolomnaam5},{kolomnaam6})"
+#                            #          " VALUES ('{value1}','{value2}','{value3}','{value4}','{value5}','{value6}')"
+#                            #          .format(tabelnaam=tabelImageBestand, kolomnaam1=kolomFileName, kolomnaam2=kolomFileHash, kolomnaam3=kolomFileExtension, kolomnaam4=kolomFileAccesTime, kolomnaam5=kolomFileModificationTime, kolomnaam6=kolomFileCreationTime, value1=filename, value2=hashwaardeMD5, value3=extensie, value4=accesTime, value5=modificationTime, value6=creationTime))
+#
+#                            ##commit
+#                            #connectie.commit()
+#                        #kijk of hexwaarde in fileheader voorkomt
+#                        for waarde in hexwaardes:
+#                            if waarde in hexwaarde:
+#                                filename = file.info.name.name
+#                                extract(filename)
+#
+#                except:
+#                    print "Geen directory of bestand"
+#
+#    #Partitie tabel ophalen met behulp van de handle
+#    partitionTable = pytsk3.Volume_Info(image)
+#    #blocksize ophalen
+#    bsize = partitionTable.info.block_size
+#
+#    #directory checker
+#    for part in partitionTable:
+#        print part
+#        try:
+#            partitionHandle = pytsk3.FS_Info(image, offset=(part.start * bsize))
+#            directoryHandle = partitionHandle.open_dir(path='/')
+#            checkDirectory(directoryHandle)
+#        except IOError as error:
+#            print "Error"
 
 def werkMenu(casusNaam, connectie, c, imageBestand):
 
@@ -394,8 +506,8 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
 
     if(optie == 1):
     #casusnaam opvragen uit de database en printen op scherm
-        c.execute('SELECT casus_naam FROM {tabelnaam}'. \
-              format(tabelnaam=casusNaamInfo))
+        c.execute('SELECT casus_naam FROM {tabelnaam}'
+                  .format(tabelnaam=casusNaamInfo))
         dataUitDB = c.fetchone()
         print("\nCasus Naam: "+(dataUitDB[0]))
 
@@ -404,7 +516,7 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
 
     if(optie == 2):
 
-        extractor(casusNaam, connectie, c, imageBestand, extractsLocatie)
+        extractor(casusNaam, connectie, c, imageBestand)
 
     if(optie == 3):
         print "Het programma wordt over 3 seconden afgesloten..."
