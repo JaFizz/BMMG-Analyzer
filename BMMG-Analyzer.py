@@ -10,8 +10,10 @@ import datetime
 import os
 import pytsk3
 import binascii
-import pyewf
 import hashlib
+#import md5
+#from hashlib import md5
+#import pyewf
 
 #VARIABELEN
 d = datetime.datetime.now()
@@ -39,7 +41,7 @@ kolomFileExtension = 'file_extension'
 kolomFileAccesTime = 'file_acces_time'
 kolomFileModificationTime = 'file_modification_time'
 kolomFileCreationTime = 'file_creation_time'
-kolomFileSymbolicLink = 'file_symbolic_link'
+kolomFileExtractNameLocation = 'file_extract_name'
 
 #SQL datatypes
 #kolomDataBLOB = 'data_blob'
@@ -156,7 +158,6 @@ def nieuweCasusToevoegen():
     #ImageBestand tabel maken
     c.execute('CREATE TABLE {tabelnaam} ({kolomnaam} {datatype})'.format(tabelnaam=tabelImageBestand,
                                                                          kolomnaam=kolomImageNaam, datatype=textDataType))
-
     #ImageBestand kolom toevoegen
     c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
               .format(tabelnaam=tabelImageBestand, kolomnaam=kolomImageLocatie, datatype=textDataType))
@@ -221,17 +222,25 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
                                                                          kolomnaam=kolomFileName, datatype=textDataType))
     #Nieuwe kolommen toevoegen
     c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+              .format(tabelnaam=tabelFiles, kolomnaam=kolomFileExtractNameLocation, datatype=textDataType))
+    c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
               .format(tabelnaam=tabelFiles, kolomnaam=kolomFileHash, datatype=textDataType))
     c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
               .format(tabelnaam=tabelFiles, kolomnaam=kolomFileExtension, datatype=textDataType))
+    c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+              .format(tabelnaam=tabelFiles, kolomnaam=kolomFileCreationTime, datatype=textDataType))
+    c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+              .format(tabelnaam=tabelFiles, kolomnaam=kolomFileModificationTime, datatype=textDataType))
+    c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+              .format(tabelnaam=tabelFiles, kolomnaam=kolomFileAccesTime, datatype=textDataType))
 
     #commit
     connectie.commit()
 
-    class EwfImgInfo(pytsk3.Img_Info):
-        def __init__(self, ewf_handle):
-                self._ewf_handle = ewf_handle
-                super(EwfImgInfo, self).__init__(url="", type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
+    #class EwfImgInfo(pytsk3.Img_Info):
+    #    def __init__(self, ewf_handle):
+    #            self._ewf_handle = ewf_handle
+    #            super(EwfImgInfo, self).__init__(url="", type=pytsk3.TSK_IMG_TYPE_EXTERNAL)
 
     #imagebestand
     imageFile = imageBestand
@@ -245,19 +254,21 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
 
             if file.info.name.name in [".", ".."]:
                 continue
+
             else:
+
                 try:
                     ftype = file.info.meta.type
                     #Als er een mapje is gevonden
+
                     if ftype == pytsk3.TSK_FS_META_TYPE_DIR:
-                        print "Map gevonden"
-                        #print directory naam
-                        #print file.info.name.name
+                        #print "Map gevonden"
                         #geef directory naam mee aan functie om te doorzoeken
                         checkDirectory(file.as_directory())
 
                     #Als er een bestand is gevonden
                     else:
+
                         #lees eerste 16 bytes van de file (header bytes)
                         header_bytes = file.read_random(0, 16)
                         #maak hexwaarde van de header_bytes, maakt ze ook hoofdletters
@@ -286,38 +297,23 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
 
                         #Extract functie
                         def extract(filename):
-                            bestandLocatie = extractsLocatie + filename
-                            #extractslocatie + filename genereren
-                            bestand = open(bestandLocatie, 'w')
+                            filename1 = os.path.splitext(filename)[0]
+                            #random integer voor de filename filename
+                            filename2 =  str(randint(0,99999999)) + "." + filename1
+
+                            #bestandlocatie genereren met extractslocatie + filename
+                            extractName = extractsLocatie + filename2
+
+                            bestand = open(extractName, 'w')
                             bestand.write(file.read_random(0, file.info.meta.size))
                             bestand.close()
-                            print filename + " extracted"
+                            print filename + " extracted.\n Filedirectory: " + extractName
 
-                            bestandd = open(bestandLocatie, 'r')
-                            #1 Filename
-                            #is al meegegeven in de functie
-                            #2 hashwaarde MD5
-                            #pas berekenen na het extracten van de image
-                            #3 file extensie
                             extensie = os.path.splitext(filename)[1]
-                            print filename + " filename"
-                            print extensie + " extensie"
 
                             #MD5 hashwaarde berekenen
-                            #hashwaardeMD5 = hashlib.md5(bestandd).hexdigest()
-                            #print hashwaardeMD5 + "STAP 13"
-                            bestandd.close()
-                            print "DATABASE Link niet werken, zie hieronder"
-
-                            #ImageBestand tabel vullen
-                            c.execute("INSERT INTO {tabelnaam} ({kolomnaam1},{kolomnaam2},{kolomnaam3})"
-                                      " VALUES ('{value1}','{value2}','{value3}')"
-                                      .format(tabelnaam=tabelImageBestand, kolomnaam1=kolomFileName, kolomnaam2=kolomFileHash, kolomnaam3=kolomFileExtension, value1=filename, value2=hashwaardeMD5, value3=extensie))
-                            print "STAP 15"
-                            #commit
-                            connectie.commit()
-                            print "STAP 16"
-
+                            hashValue =  hashlib.md5(open(extractName, 'rb').read()).hexdigest()
+                            return extensie, hashValue, extractName
 
                         #kijk of hexwaarde in fileheader voorkomt
                         for waarde in hexwaardes:
@@ -325,15 +321,28 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
                                 filename = file.info.name.name
                                 #4 access time
                                 accesTime = file.info.meta.atime
-                                #accesTime = accesTime.astype("datetime64[s]")
                                 #5 modification time
                                 modificationTime = file.info.meta.mtime
                                 #6 creation time
                                 creationTime = file.info.meta.crtime
-                                extract(filename)
+
+                                # extensie en hashvalue zijn returnvalues van extract
+                                extensie, hashValue, extractName = extract(filename)
+
+                                #ImageBestand tabel vullen
+                                c.execute("INSERT INTO {tabelnaam} ({kolomnaam1},{kolomnaam2},{kolomnaam3},{kolomnaam4},{kolomnaam5},{kolomnaam6},{kolomnaam7})"
+                                " VALUES ('{value1}','{value2}','{value3}','{value4}','{value5}','{value6}','{value7}')"
+                                .format(tabelnaam=tabelFiles, kolomnaam1=kolomFileName, kolomnaam2=kolomFileExtension, kolomnaam3=kolomFileHash,
+                                        kolomnaam4=kolomFileAccesTime, kolomnaam5=kolomFileModificationTime, kolomnaam6=kolomFileCreationTime, kolomnaam7=kolomFileExtractNameLocation,
+                                        value1=filename, value2=extensie, value3=hashValue, value4=accesTime, value5=modificationTime, value6=creationTime, value7=extractName))
+
+                                #commit
+                                connectie.commit()
+                                #print "Commit"
 
                 except:
-                    print "Geen map of bestand gevonden"
+                    #print "Geen map of bestand gevonden"
+                    continue
 
     #Partitie tabel ophalen met behulp van de handle
     partitionTable = pytsk3.Volume_Info(image)
@@ -345,8 +354,8 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
         print part
         try:
             partitionHandle = pytsk3.FS_Info(image, offset=(part.start * bsize))
-            directoryHandle = partitionHandle.open_dir(path='/')
-            checkDirectory(directoryHandle)
+            handle = partitionHandle.open_dir(path='/')
+            checkDirectory(handle)
         except IOError as error:
             print "Error"
 
@@ -379,8 +388,6 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
             optie = int(raw_input("\nKies een optie. Vul een cijfer in!!!: "))
         except ValueError:
             sys.exit("Twee keer geen optie opgegeven, het programma wordt afgesloten")
-
-
 
     if(optie == 1):
     #casusnaam opvragen uit de database en printen op scherm
