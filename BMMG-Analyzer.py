@@ -262,13 +262,13 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
                     #Als er een mapje is gevonden
 
                     if ftype == pytsk3.TSK_FS_META_TYPE_DIR:
-                        #print "Map gevonden"
+                        #print "Map gevonden ---> wordt nu gecheckt"
                         #geef directory naam mee aan functie om te doorzoeken
                         checkDirectory(file.as_directory())
 
                     #Als er een bestand is gevonden
                     else:
-
+                        #print "Bestand:\n"
                         #lees eerste 16 bytes van de file (header bytes)
                         header_bytes = file.read_random(0, 16)
                         #maak hexwaarde van de header_bytes, maakt ze ook hoofdletters
@@ -299,17 +299,20 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
                         def extract(filename):
                             filename1 = os.path.splitext(filename)[0]
                             #random integer voor de filename filename
-                            filename2 =  str(randint(0,99999999)) + "." + filename1
+                            filename2 =  str(randint(0,99999999)) + "_" + filename1
+
+                            print "Stap:" + filename2
+
+                            extensie = os.path.splitext(filename)[1]
 
                             #bestandlocatie genereren met extractslocatie + filename
-                            extractName = extractsLocatie + filename2
+                            extractName = extractsLocatie + filename2 + extensie
 
                             bestand = open(extractName, 'w')
                             bestand.write(file.read_random(0, file.info.meta.size))
                             bestand.close()
-                            print filename + " extracted.\n Filedirectory: " + extractName
-
-                            extensie = os.path.splitext(filename)[1]
+                            print filename + " extracted.\nFiledirectory: " + extractName
+                            print "-------------------------------------------------------------------------------------\n"
 
                             #MD5 hashwaarde berekenen
                             hashValue =  hashlib.md5(open(extractName, 'rb').read()).hexdigest()
@@ -318,15 +321,16 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
                         #kijk of hexwaarde in fileheader voorkomt
                         for waarde in hexwaardes:
                             if waarde in hexwaarde:
+                                #filename
                                 filename = file.info.name.name
-                                #4 access time
+                                #access time
                                 accesTime = file.info.meta.atime
-                                #5 modification time
+                                #modification time
                                 modificationTime = file.info.meta.mtime
-                                #6 creation time
+                                #creation time
                                 creationTime = file.info.meta.crtime
 
-                                # extensie en hashvalue zijn returnvalues van extract
+                                # extensie en hashvalue en extractname zijn returnvalues van extract
                                 extensie, hashValue, extractName = extract(filename)
 
                                 #ImageBestand tabel vullen
@@ -357,7 +361,8 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
             handle = partitionHandle.open_dir(path='/')
             checkDirectory(handle)
         except IOError as error:
-            print "Error"
+            print "-----------"
+            #werkMenu(casusNaam, connectie, c, imageBestand)
 
 def werkMenu(casusNaam, connectie, c, imageBestand):
 
