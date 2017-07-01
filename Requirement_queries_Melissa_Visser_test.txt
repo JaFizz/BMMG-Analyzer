@@ -1,5 +1,6 @@
 **Requirement 1.1.1**
 	if(optie == 4):
+	#Requirement 1.1.1
         c.execute("select file_name, file_extension "
                   "from Files "
                   "where file_extension "
@@ -9,9 +10,17 @@
 
 
 
+
 **Requirement 1.1.2**
-	#if(optie==5):
+	if(optie==5):
         #Requirement 1.1.2
+	c.execute("select file_name, file_extension "
+                  "from Files "
+                  "where file_extension "
+                  "LIKE '.txt' or file_extension like '.doc'")
+        # commit
+        connectie.commit()
+
 
 
 
@@ -26,15 +35,31 @@
         connectie.commit()
 
 
+
+
 **Requirement 1.1.4**
-	#if(optie == 7):
+	if(optie == 7):
         #Requirement 1.1.4
+	c.execute("select file_name, file_extension "
+                  "from Files "
+                  "where file_extension "
+                  "LIKE '.txt' or file_extension like '.doc'")
+        # commit
+        connectie.commit()
+
 
 
 
 **Requirement 1.1.5**
-	#if(optie == 8):
+	if(optie == 8):
         #Requirement 1.1.5
+	c.execute("select file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
+                  "from Files "
+                  "where file_extension "
+                  "LIKE '.txt' or file_extension like '.doc'")
+        # commit
+        connectie.commit()
+
 
 
 
@@ -57,6 +82,7 @@
 
 
 
+
 **Requirement 1.1.7**
 	if(optie == 10):
         #Requirement 1.1.7
@@ -69,15 +95,24 @@
 
 
 
+
 **Requirement 1.1.8**
 	#if(optie == 11):
         #Requirement 1.1.8
 
 
 
+
 **Requirement 1.1.9**
 	#if(optie == 12):
         #Requirement 1.1.9
+	c.execute("select file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
+                  "from Files "
+                  "where file_extension "
+                  "LIKE '.pdf' or file_extension like '.tif' or file_extension like '.tiff'")
+        # commit
+        connectie.commit()
+
 
 
 
@@ -93,6 +128,7 @@
 
 
 
+
 **Requirement 1.1.11**
 	if(optie == 14):
         #Requirement 1.1.11
@@ -105,15 +141,17 @@
 
 
 
+
 **Requirement 1.1.12**
 	if(optie == 15):
         #Requirement 1.1.12
         c.execute("select file_name, file_extension "
                   "from Files "
                   "where file_name "
-                  "LIKE '%VPN%' or file_name like 'Citrix'")
+                  "LIKE '%VPN%' or file_name like '%Citrix%'")
         # commit
         connectie.commit()
+
 
 
 
@@ -123,15 +161,18 @@
 
 
 
+
 **Requirement 1.1.14**
 	# if(optie == 17):
         # Requirement 1.1.14
+	
 
 
 
 **Requirement 1.1.15**
 	# if(optie == 18):
         # Requirement 1.1.15
+
 
 
 
@@ -147,7 +188,22 @@
 
 
 
-**Logfunctie**
+
+**Requirement 1.1.17**
+	if(optie == 20):
+        #Requirement 1.1.17
+
+
+
+
+**Requirement 1.1.18**
+	if(optie == 21):
+        #Requirement 1.1.18
+
+
+
+
+**Logfunctie C.2**
 
 #LIBRARIES
 import tkFileDialog as filedialog
