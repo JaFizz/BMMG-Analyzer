@@ -14,6 +14,7 @@ import hashlib
 #import md5
 #from hashlib import md5
 #import pyewf
+from termcolor import colored
 
 #VARIABELEN
 d = datetime.datetime.now()
@@ -383,8 +384,31 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
 
     #Werkmenu opties
     print("Optie 1: Casusnaam opvragen")
-    print("Optie 2: Files extraheren")
-    print("Optie 3: BMMG-Analyzer afsluiten")
+    print("Optie 2: Extractie van Image bestand")
+    print("Optie 3: BMMG-Analyzer afsluiten \n ")
+    print colored('LET OP! Optie 4 t/m Optie 25 kunnen pas gekozen worden zodra Optie 2 is uitgevoerd. \n', 'red' )
+    print("Optie 4: Extractie van combound bestanden uit image bestand")
+    print("Optie 5: Extractie van tekst uit bestanden uit image bestand")
+    print("Optie 6: Extractie van metadata uit bestanden uit image bestand")
+    print("Optie 7: Elementaire taalherkenning van bestanden uit image bestand")
+    print("Optie 8: Indexering van tekst en metadata uit image bestand")
+    print("Optie 9: Verwijzing naar duplicaten uit image bestand")
+    print("Optie 10: Overzicht van alle afbeeldingen inclusief metadata uit image bestand weergeven")
+    print("Optie 11: Overzicht van gebruikersbestanden naat taal uit image bestand")
+    print("Optie 12: Herkennen van imageonly PDF en TIFF bestanden uit image bestand")
+    print("Optie 13: Sporen van social media weergeven uit image bestand")
+    print("Optie 14: Sporen van encryptie weergeven uit image bestand")
+    print("Optie 15: Herkenning van VPN uit image bestand weergeven")
+    print("Optie 16: Geintalleerde en gebruikte software uit image bestand weergeven")
+    print("Optie 17: Analyse van systemfiles uit image bestand maken")
+    print("Optie 18: Analyse van VSS/Unpartitioned space uit image bestand maken")
+    print("Optie 19: Rapport over ongebruikelijke zaken uit image bestand maken")
+    print("Optie 20: Rapport over fragmentatie uit image bestand maken")
+    print("Optie 21: Entiteit extractie van geldbedragen uit image bestand maken")
+    print("Optie 22: Entiteit extractie van creditcard nummers uit image bestand maken")
+    print("Optie 23: Entiteit extractie van telefoonnummers uit image bestand maken")
+    print("Optie 24: Entiteit extractie van nummerplaten uit image bestand maken")
+    print("Optie 25: Entiteit extractie van bankrekening nummers uit image bestand maken")
 
     #optie kiezen
     optie = int(raw_input("\nKies een optie: "))
