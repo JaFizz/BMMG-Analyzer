@@ -1,0 +1,115 @@
+	#Bovenin nog tabelnaam tabelPDF_TTIF declareren
+    if (optie == 10):
+        #opslagfile maken voor PDF en TTIF files
+        reportMetadata = locatieReports + "PDF_TTIF.csv"
+
+
+        try:
+            # Metadata tabel maken
+            c.execute('CREATE TABLE {tabelnaam} ({kolomnaam} {datatype})'.format(tabelnaam=tabelPDF_TTIF,
+                                                                                 kolomnaam=kolomFileName,
+                                                                                 datatype=textDataType))
+            # Nieuwe kolommen toevoegen
+            c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                      .format(tabelnaam=tabelPDF_TTIF, kolomnaam=kolomFileName, datatype=textDataType))
+            c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                      .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileExtractNameLocation, datatype=textDataType))
+            c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                      .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileExtension, datatype=textDataType))
+			c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                      .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileCreationTime, datatype=textDataType))
+            c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                      .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileModificationTime, datatype=textDataType))
+            c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                      .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileAccesTime, datatype=textDataType))
+            #commit aanmaken van tabel en kolommen
+            connectie.commit()
+
+            #functie voor tijd omzetten van unix naar normal time
+            def generateTime(unixTime):
+                return (datetime.datetime.fromtimestamp(
+                    int(unixTime)
+                    # format van de timenotatie
+                ).strftime('%Y-%m-%d %H:%M:%S'))
+
+            c.execute(
+                "select file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
+                "from Files "
+                "where file_extension "
+                "LIKE '.pdf' or file_extension like '.tif' or file_extension like '.ttif' ")
+
+            UNIXTime = c.fetchall()
+            for value in UNIXTime:
+                fileName = value[0]
+                filePlaats = value[1]
+                fileExtensie = value[2]
+                try:
+                    UNIXreturn1 = generateTime(value[3])
+                    UNIXreturn2 = generateTime(value[4])
+                    UNIXreturn3 = generateTime(value[5])
+                except:
+                    print ""
+
+                try:
+                    print "--------------NEW FILE-------------------"
+                    print "Filename: " + fileName
+                    print UNIXreturn1 + " = Creation time"
+                    print UNIXreturn2 + " = Modification time"
+                    print UNIXreturn3 + " = Acces time\n"
+
+                    #file_metadata tabel vullen
+                    c.execute(
+                        "INSERT INTO {tabelnaam} ({kolomnaam1},{kolomnaam2},{kolomnaam3},{kolomnaam4},{kolomnaam5},{kolomnaam6})"
+                        " VALUES ('{value1}','{value2}','{value3}','{value4}','{value5}','{value6}')"
+                            .format(tabelnaam=tabelPDF_TTIF, kolomnaam1=kolomFileName, kolomnaam2=kolomFileExtractNameLocation,
+                                    kolomnaam3=kolomFileExtension,
+                                    kolomnaam4=kolomFileCreationTime, kolomnaam5=kolomFileModificationTime,
+                                    kolomnaam6=kolomFileAccesTime,
+                                    value1=fileName, value2=filePlaats, value3=fileExtensie, value4=UNIXreturn1,
+                                    value5=UNIXreturn2, value6=UNIXreturn3))
+                    #commit insert into database
+                    connectie.commit()
+
+                except:
+                    print ""
+
+            #report maken van gemaakte tabel hierboven
+            print "BMMG-Analyzer is bezig..."
+
+            c.execute("SELECT file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
+                      "FROM tabelPDF_TTIF ")
+
+            #maak een waarde aan die de informatie uit de SQL querie overneemt.
+            query10 = c.fetchall()
+
+            #maak reportfile aan
+            with open(reportMetadata, 'w') as csvfile:
+                writer = csv.writer(csvfile, delimiter=",")
+                i = 0
+                #voor elke row uit de select hierboven
+                while i < len(query10):
+                    #Headers aanmaken voor tabel
+                    if i == 0:
+                        writer.writerow(['File-Name:', 'Locatie:', 'File-Extensie:', 'Creation Time:','Modification Time:', 'Acces Time:'])
+                    #anderzijds write hij de data naar de file
+                    writer.writerow(query[i])
+                    #itereren over de rows uit de database
+                    i = i + 1
+            print "Er is een rapport gegenereerd met daarin een overzicht van alle PFD en TTIF bestanden"
+            print "Dit rapport is te vinden in de map: "+ reportMetadata
+            print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
+            print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
+            time.sleep(8)
+
+            #terug naar werkmenu
+            werkMenu(casusNaam, connectie, c, imageBestand)
+
+        except:
+            print "Er is reeds een rapport gegenereerd met daarin een overzicht van alle PFD en TTIF bestanden"
+            print "Dit rapport is te vinden in de map: "+ reportMetadata
+            print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
+            print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
+            time.sleep(8)
+
+            #terug naar werkmenu
+            werkMenu(casusNaam, connectie, c, imageBestand)
