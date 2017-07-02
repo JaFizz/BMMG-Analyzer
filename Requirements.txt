@@ -233,6 +233,21 @@
         # commit
         connectie.commit()
 
+    if (optie == 18):
+        #Requirement 1.1.15
+        # image handle
+        imagehandle = pytsk3.Img_Info(imageBestand)
+
+        # partitie table
+        partitionTable = pytsk3.Volume_Info(imagehandle)
+
+        # print partitie tabel
+        for partition in partitionTable:
+            print partition.addr, partition.desc, "%ss(%s)" % (partition.start, partition.start * 512), partition.len
+
+        # weer naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
     if (optie == 19):
         # Requirement 1.1.16
         c.execute("select file_name, file_extension "
