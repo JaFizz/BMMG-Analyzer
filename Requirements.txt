@@ -1,0 +1,258 @@
+#Werkmenu opties
+    print("Optie 1: Casusnaam opvragen")
+    print("Optie 2: Extractie van Image bestand")
+    print("Optie 3: BMMG-Analyzer afsluiten \n ")
+    print colored('LET OP! Optie 4 t/m Optie 25 kunnen pas gekozen worden zodra Optie 2 is uitgevoerd. \n', 'red' )
+    print("Optie 4: Extractie van combound bestanden uit image bestand")
+    print("Optie 5: Extractie van tekst uit bestanden uit image bestand")
+    print("Optie 6: Extractie van metadata uit bestanden uit image bestand")
+    print("Optie 7: Elementaire taalherkenning van bestanden uit image bestand")
+    print("Optie 8: Indexering van tekst en metadata uit image bestand")
+    print("Optie 9: Verwijzing naar duplicaten uit image bestand")
+    print("Optie 10: Overzicht van alle afbeeldingen inclusief metadata uit image bestand weergeven")
+    print("Optie 11: Overzicht van gebruikersbestanden naat taal uit image bestand")
+    print("Optie 12: Herkennen van imageonly PDF en TIFF bestanden uit image bestand")
+    print("Optie 13: Sporen van social media weergeven uit image bestand")
+    print("Optie 14: Sporen van encryptie weergeven uit image bestand")
+    print("Optie 15: Herkenning van VPN uit image bestand weergeven")
+    print("Optie 16: Geintalleerde en gebruikte software uit image bestand weergeven")
+    print("Optie 17: Analyse van systemfiles uit image bestand maken")
+    print("Optie 18: Analyse van VSS/Unpartitioned space uit image bestand maken")
+    print("Optie 19: Rapport over ongebruikelijke zaken uit image bestand maken")
+    print("Optie 20: Rapport over fragmentatie uit image bestand maken")
+    print("Optie 21: Entiteit extractie van geldbedragen uit image bestand maken")
+    print("Optie 22: Entiteit extractie van creditcard nummers uit image bestand maken")
+    print("Optie 23: Entiteit extractie van telefoonnummers uit image bestand maken")
+    print("Optie 24: Entiteit extractie van nummerplaten uit image bestand maken")
+    print("Optie 25: Entiteit extractie van bankrekening nummers uit image bestand maken")
+
+    #optie kiezen
+    optie = int(raw_input("\nKies een optie: "))
+    if not optie:
+        try:
+            optie = int(raw_input("\nKies een optie. Vul een cijfer in!!!: "))
+        except ValueError:
+            sys.exit("Twee keer geen optie opgegeven, het programma wordt afgesloten")
+
+    if(optie == 1):
+    #casusnaam opvragen uit de database en printen op scherm
+        c.execute('SELECT casus_naam FROM {tabelnaam}'
+                  .format(tabelnaam=casusNaamInfo))
+        dataUitDB = c.fetchone()
+        print("\nCasus Naam: "+(dataUitDB[0]))
+
+        #weer naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    if(optie == 2):
+
+        extractor(casusNaam, connectie, c, imageBestand, extractsLocatie)
+
+    if(optie == 3):
+        print "Het programma wordt over 3 seconden afgesloten..."
+        connectie.close()
+        time.sleep(3)
+        sys.exit()
+
+    if (optie == 4):
+        # Requirement 1.1.1
+        c.execute("select file_name, file_extension "
+                  "from Files "
+                  "where file_extension "
+                  "LIKE '.doc' or file_extension like '.ppt' or file_extension like '.xls'")
+        # commit
+        connectie.commit()
+
+    if (optie == 5):
+        # Requirement 1.1.2
+        c.execute("select file_name, file_extension "
+                  "from Files "
+                  "where file_extension "
+                  "LIKE '.txt' or file_extension like '.doc'")
+        # commit
+        connectie.commit()
+
+    if (optie == 6):
+        # Requirement 1.1.3
+        import datetime
+
+        tabelMetaData = 'file_metadata_requirement_1_1_3'
+
+        # Metadata tabel maken
+        c.execute('CREATE TABLE {tabelnaam} ({kolomnaam} {datatype})'.format(tabelnaam=tabelMetaData,
+                                                                             kolomnaam=kolomFileName,
+                                                                             datatype=textDataType))
+        # Nieuwe kolommen toevoegen
+        c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                  .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileExtractNameLocation, datatype=textDataType))
+        c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                  .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileExtension, datatype=textDataType))
+        c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                  .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileCreationTime, datatype=textDataType))
+        c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                  .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileModificationTime, datatype=textDataType))
+        c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                  .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileAccesTime, datatype=textDataType))
+
+        connectie.commit()
+
+        # tijd omzetten van unix naar normal time
+        def generateTime(unixTime):
+            return (datetime.datetime.fromtimestamp(
+                int(unixTime)
+                # format van de timenotatie
+            ).strftime('%Y-%m-%d %H:%M:%S'))
+
+        c.execute(
+            "select file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
+            "from Files "
+            "where file_extension "
+            "LIKE '.pdf' or file_extension like '.doc' or file_extension like '.jpg' or file_extension like '.png'")
+
+        UNIXTime = c.fetchall()
+        for value in UNIXTime:
+            fileName = value[0]
+            filePlaats = value[1]
+            fileExtensie = value[2]
+            try:
+                UNIXreturn1 = generateTime(value[3])
+                UNIXreturn2 = generateTime(value[4])
+                UNIXreturn3 = generateTime(value[5])
+            except:
+                print ""
+
+            try:
+                print "--------------NEW FILE-------------------"
+                print UNIXreturn1 + " = Creation time"
+                print UNIXreturn2 + " = Modification time"
+                print UNIXreturn3 + " = Acces time\n"
+
+                # file_metadata tabel vullen
+                c.execute(
+                    "INSERT INTO {tabelnaam} ({kolomnaam1},{kolomnaam2},{kolomnaam3},{kolomnaam4},{kolomnaam5},{kolomnaam6})"
+                    " VALUES ('{value1}','{value2}','{value3}','{value4}','{value5}','{value6}')"
+                    .format(tabelnaam=tabelMetaData, kolomnaam1=kolomFileName, kolomnaam2=kolomFileExtractNameLocation,
+                            kolomnaam3=kolomFileExtension,
+                            kolomnaam4=kolomFileCreationTime, kolomnaam5=kolomFileModificationTime,
+                            kolomnaam6=kolomFileAccesTime,
+                            value1=fileName, value2=filePlaats, value3=fileExtensie, value4=UNIXreturn1,
+                            value5=UNIXreturn2, value6=UNIXreturn3))
+
+                connectie.commit()
+
+            except:
+                print ""
+
+
+        # commit
+        connectie.commit()
+
+    if (optie == 7):
+        # Requirement 1.1.4
+        c.execute("select file_name, file_extension "
+                  "from Files "
+                  "where file_extension "
+                  "LIKE '.txt' or file_extension like '.doc'")
+        # commit
+        connectie.commit()
+
+    if (optie == 8):
+        # Requirement 1.1.5
+        c.execute(
+            "select file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
+            "from Files "
+            "where file_extension "
+            "LIKE '.txt' or file_extension like '.doc'")
+        # commit
+        connectie.commit()
+
+    if (optie == 9):
+        # Requirement 1.1.6
+        # Tabel tabelDuplicates aanmaken met de volgende kolommen: file_name, file_md5_hash en file_aantal_duplicates
+        try:
+            sql_command = """CREATE TABLE tabelDuplicates AS
+                SELECT file_name as 'file_name',
+                file_md5_hash as 'file_md5_hash',
+                count(*) as 'file_aantal_duplicates'
+                FROM Files
+                GROUP BY file_md5_hash HAVING count(*) > 1
+                ORDER BY file_name DESC """
+
+            # Voer code uit
+            c.execute(sql_command)
+            # commit
+            connectie.commit()
+
+        except sqlite3.OperationalError as e:
+            werkMenu(casusNaam, connectie, c, imageBestand)
+
+    if (optie == 10):
+        # Requirement 1.1.7
+        c.execute(
+            "select file_name, file_extract_name, file_extension, file_md5_hash, file_creation_time, file_modification_time, file_acces_time "
+            "from Files "
+            "where file_extension "
+            "LIKE '.jpg' or file_extension like '.jpeg' or file_extension like '.png' or file_extension like '.tiff'")
+        # commit
+        connectie.commit()
+
+    if (optie == 12):
+        # Requirement 1.1.9
+        c.execute(
+            "select file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
+            "from Files "
+            "where file_extension "
+            "LIKE '.pdf' or file_extension like '.tif' or file_extension like '.tiff'")
+        # commit
+        connectie.commit()
+
+    if (optie == 13):
+        # Requirement 1.1.10
+        c.execute("select file_name, file_extension "
+                  "from Files "
+                  "where file_name "
+                  "LIKE '%Bookmark%' or file_name like '%History%' or file_name like '%Facebook%' or file_name like '%Twitter%' or file_name like '%Skype%'")
+        # commit
+        connectie.commit()
+
+    if (optie == 14):
+        # Requirement 1.1.11
+        c.execute("select file_name, file_extension "
+                  "from Files "
+                  "where file_name "
+                  "LIKE '%Crypt%' or file_name like '%Lock%' or file_name like '%Safe%'")
+        # commit
+        connectie.commit()
+
+    if (optie == 15):
+        # Requirement 1.1.12
+        c.execute("select file_name, file_extension "
+                  "from Files "
+                  "where file_name "
+                  "LIKE '%VPN%' or file_name like '%Citrix%'")
+        # commit
+        connectie.commit()
+
+    if (optie == 18):
+        #Requirement 1.1.15
+        # image handle
+        imagehandle = pytsk3.Img_Info(imageBestand)
+
+        # partitie table
+        partitionTable = pytsk3.Volume_Info(imagehandle)
+
+        # print partitie tabel
+        for partition in partitionTable:
+            print partition.addr, partition.desc, "%ss(%s)" % (partition.start, partition.start * 512), partition.len
+
+        # weer naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    if (optie == 19):
+        # Requirement 1.1.16
+        c.execute("select file_name, file_extension "
+                  "from Files "
+                  "where file_name "
+                  "LIKE '%Confidential%' or file_name like '%Vertrouwelijk%' or file_name like '%Porn%' or file_name like '%Abuse%' or file_name like '%Misbruik%' or file_name like '%Mishandeling%' or file_name like '%Fraud%'")
+        # commit
+        connectie.commit()
