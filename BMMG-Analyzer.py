@@ -44,6 +44,8 @@ kolomFileModificationTime = 'file_modification_time'
 kolomFileCreationTime = 'file_creation_time'
 kolomFileExtractNameLocation = 'file_extract_name'
 
+tabelMetaData = 'file_metadata_requirement_1_1_3'
+
 #kolomDataBLOB = 'data_blob'
 
 #SQL datatypes
@@ -384,6 +386,7 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
     #Werkmenu opties printen op scherm
     print("Optie 1: Casusinformatie opvragen")
     print("Optie 2: Compound Files inzichtelijk maken ")                                                                    #Requirement C.1.1.1
+    print("Optie 4: Metadata inzichtelijk maken van bestanden: PDF, DOC, JPG, PNG")                                         #Requirement C.1.1.3
     print("Optie 100: BMMG-Analyzer afsluiten")
 
     #optie kiezen in het werkmenu
@@ -403,18 +406,25 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
     #Casusinformatie opvragen
     if(optie == 1):
         #casusnaam opvragen uit de database en printen op scherm
-        c.execute('SELECT casus_naam FROM {tabelnaam}'
+        c.execute('SELECT * FROM {tabelnaam}'
                   .format(tabelnaam=casusNaamInfo))
-        dataUitDB = c.fetchone()
-        print("\nCasus Naam: "+(dataUitDB[0]))
-        time.sleep(5)
-        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        dataUitDB = c.fetchall()
+        for value in dataUitDB:
+            dataCasusNaam = value[0]
+            dataOnderzoeker = value[1]
+            dataCasusMap = value[2]
+            print"\nCasus Naam: "+ dataCasusNaam
+            print "Onderzoeker: " + dataOnderzoeker
+            print "Casusmap: " + dataCasusMap + "\n"
+            print "U wordt automatisch teruggestuurd naar het werkmenu..."
+            time.sleep(5)
 
         #weer naar werkmenu
         werkMenu(casusNaam, connectie, c, imageBestand)
 
     #Requirement C.1.1.1: Compound files inzichtelijk maken
     if(optie == 2):
+        print "BMMG-Analyzer is bezig..."
         #select compound files from database
         c.execute("SELECT file_name, file_extension "
                   "FROM Files "
@@ -441,10 +451,186 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                 #itereren over de rows uit de database
                 i = i + 1
         print "Er is een rapport gegenereerd met daarin alle Compound-Files"
-        print "Deze is te vinden in: "+ reportCompound
-        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
-        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        print "Dit rapport is te vinden in de map: "+ reportCompound
+        print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
+        print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
         time.sleep(10)
+        #terug naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    #Requirement C.1.1.2: Text uit bestanden inzichtelijk maken (TXT + DOC)
+    if (optie == 3):
+        print ""
+        #terug naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    #Requirement C.1.1.3: Metadata inzichtelijk maken van bestanden PDF, DOC, JPG, PNG
+    if (optie == 4):
+        #opslagfile maken voor compound files
+        reportMetadata = locatieReports + "Metadata_PDF_DOC_JPG_PNG.csv"#select from database
+
+        c.execute("SELECT file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
+                  "FROM file_metadata_requirement_1_1_3 ")
+
+        #maak een waarde aan die de informatie uit de SQL querie overneemt.
+        query = c.fetchall()
+
+        try:
+            # Metadata tabel maken
+            c.execute('CREATE TABLE {tabelnaam} ({kolomnaam} {datatype})'.format(tabelnaam=tabelMetaData,
+                                                                                 kolomnaam=kolomFileName,
+                                                                                 datatype=textDataType))
+            # Nieuwe kolommen toevoegen
+            c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                      .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileExtractNameLocation, datatype=textDataType))
+            c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                      .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileExtension, datatype=textDataType))
+            c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                      .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileCreationTime, datatype=textDataType))
+            c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                      .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileModificationTime, datatype=textDataType))
+            c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                      .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileAccesTime, datatype=textDataType))
+            #commit aanmaken van tabel en kolommen
+            connectie.commit()
+
+            #functie voor tijd omzetten van unix naar normal time
+            def generateTime(unixTime):
+                return (datetime.datetime.fromtimestamp(
+                    int(unixTime)
+                    # format van de timenotatie
+                ).strftime('%Y-%m-%d %H:%M:%S'))
+
+            c.execute(
+                "select file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
+                "from Files "
+                "where file_extension "
+                "LIKE '.pdf' or file_extension like '.doc' or file_extension like '.jpg' or file_extension like '.png'")
+
+            UNIXTime = c.fetchall()
+            for value in UNIXTime:
+                fileName = value[0]
+                filePlaats = value[1]
+                fileExtensie = value[2]
+                try:
+                    UNIXreturn1 = generateTime(value[3])
+                    UNIXreturn2 = generateTime(value[4])
+                    UNIXreturn3 = generateTime(value[5])
+                except:
+                    print ""
+
+                try:
+                    print "--------------NEW FILE-------------------"
+                    print UNIXreturn1 + " = Creation time"
+                    print UNIXreturn2 + " = Modification time"
+                    print UNIXreturn3 + " = Acces time\n"
+
+                    #file_metadata tabel vullen
+                    c.execute(
+                        "INSERT INTO {tabelnaam} ({kolomnaam1},{kolomnaam2},{kolomnaam3},{kolomnaam4},{kolomnaam5},{kolomnaam6})"
+                        " VALUES ('{value1}','{value2}','{value3}','{value4}','{value5}','{value6}')"
+                            .format(tabelnaam=tabelMetaData, kolomnaam1=kolomFileName, kolomnaam2=kolomFileExtractNameLocation,
+                                    kolomnaam3=kolomFileExtension,
+                                    kolomnaam4=kolomFileCreationTime, kolomnaam5=kolomFileModificationTime,
+                                    kolomnaam6=kolomFileAccesTime,
+                                    value1=fileName, value2=filePlaats, value3=fileExtensie, value4=UNIXreturn1,
+                                    value5=UNIXreturn2, value6=UNIXreturn3))
+                    #commit insert into database
+                    connectie.commit()
+
+                except:
+                    print ""
+
+            #report maken van gemaakte tabel hierboven
+            print "BMMG-Analyzer is bezig..."
+
+            #maak reportfile aan
+            with open(reportMetadata, 'w') as csvfile:
+                writer = csv.writer(csvfile, delimiter=",")
+                i = 0
+                #voor elke row uit de select hierboven
+                while i < len(query):
+                    #Headers aanmaken voor tabel
+                    if i == 0:
+                        writer.writerow(['File-Name:', 'Locatie:', 'File-Extensie:', 'Creation Time:','Modification Time:', 'Acces Time:'])
+                    #anderzijds write hij de data naar de file
+                    writer.writerow(query[i])
+                    #itereren over de rows uit de database
+                    i = i + 1
+            print "Er is een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG"
+            print "Dit rapport is te vinden in de map: "+ reportMetadata
+            print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
+            print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
+            time.sleep(8)
+
+            #terug naar werkmenu
+            werkMenu(casusNaam, connectie, c, imageBestand)
+
+        except:
+            print "Er is reeds een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG"
+            print "Dit rapport is te vinden in de map: "+ reportMetadata
+            print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
+            print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
+            time.sleep(8)
+
+            #terug naar werkmenu
+            werkMenu(casusNaam, connectie, c, imageBestand)
+
+    #Requirement C.1.1.4: Taalherkenning op de bestanden TXT en DOC
+    if (optie == 5):
+        print ""
+        #terug naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    #Requirement C.1.1.5: Text en metadata inzichtelijk maken van DOC, TXT
+    if (optie == 6):
+        print ""
+        #terug naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    #Requirement C.1.1.6: Duplicaten inzichtelijk maken
+    if (optie == 7):
+        print ""
+        #terug naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    #Requirement C.1.1.7: Metadata inzichtelijk maken van bestanden JPG, JPEG, PNG, TIFF
+    if (optie == 8):
+        print ""
+        #terug naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    #Requirement C.1.1.8: Gebruikers inzichtelijk maken + taalherkenning
+    if (optie == 9):
+        print ""
+        #terug naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    #Requirement C.1.1.9: Filename + opslaglocatie printen van bestanden PDF, TIFF
+    if (optie == 10):
+        print ""
+        #terug naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    #Requirement C.1.1.10: Social Media sporen inzichtelijk maken, print filename + locatie
+    if (optie == 11):
+        print ""
+        #terug naar werkmenu
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    #Requirement C.1.1.15: Fat-table printen
+    if (optie == 12):
+        # image handle
+        imagehandle = pytsk3.Img_Info(imageBestand)
+        # partitie table
+        partitionTable = pytsk3.Volume_Info(imagehandle)
+        # print partitie tabel
+        for partition in partitionTable:
+            print partition.addr, partition.desc, "%ss(%s)" % (partition.start, partition.start * 512), partition.len
+
+        print "U wordt automatisch teruggestuurd naar het werkmenu"
+        time.sleep(7)
+        #terug naar werkmenu
         werkMenu(casusNaam, connectie, c, imageBestand)
 
     if(optie == 100):
