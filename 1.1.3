@@ -1,0 +1,41 @@
+    #Requirement C.1.1.3: Metadata inzichtelijk maken
+    if(optie == 4):
+        #select metadata van files from database
+        c.execute("select file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
+            "from Files "
+            )
+
+        #maak een waarde aan die de informatie uit de SQL querie overneemt.
+        querie4 = c.fetchall()
+        #opslagfile maken voor compound files
+        reportCompound = locatieReports + "Metadata.csv"
+
+        #maak reportfile aan
+        with open(reportCompound, 'w') as csvfile:
+            writer = csv.writer(csvfile, delimiter=",")
+            i = 0
+            #voor elke row uit de select hierboven
+            while i < len(querie4):
+                #Headers aanmaken voor tabel
+                if i == 0:
+                    writer.writerow(['File-Name:', 'File-type:'])
+                #anderzijds write hij de data naar de file
+                print "Compound-file found..."
+                writer.writerow(querie4[i])
+                #itereren over de rows uit de database
+                i = i + 1
+        print "Er is een rapport gegenereerd met daarin alle metadata van de files"
+        print "Deze is te vinden in: "+ reportCompound
+        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
+        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        time.sleep(10)
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    if(optie == 100):
+        print "Het programma wordt over 3 seconden afgesloten..."
+        connectie.close()
+        time.sleep(3)
+        sys.exit()
+
+
+

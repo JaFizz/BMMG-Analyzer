@@ -1,0 +1,53 @@
+    #Requirement C.1.1.6: Herkennen van duplicates
+    if(optie == 7):
+
+		try:
+                sql_command = """CREATE TABLE tabelDuplicates AS
+                        SELECT file_name as 'file_name',
+                        file_md5_hash as 'file_md5_hash',
+                        count(*) as 'file_aantal_duplicates'
+                        FROM Files
+                        GROUP BY file_md5_hash HAVING count(*) > 1
+                        ORDER BY file_name DESC """
+
+                # Voer code uit
+                c.execute(sql_command)
+                # commit
+                connectie.commit()
+
+            except sqlite3.OperationalError as e:
+                werkMenu(casusNaam, connectie, c, imageBestand)
+
+        #maak een waarde aan die de informatie uit de SQL querie overneemt.
+        querie7 = c.fetchall()
+        #opslagfile maken voor compound files
+        reportCompound = locatieReports + "Duplicates.csv"
+
+        #maak reportfile aan
+        with open(reportCompound, 'w') as csvfile:
+            writer = csv.writer(csvfile, delimiter=",")
+            i = 0
+            #voor elke row uit de select hierboven
+            while i < len(querie7):
+                #Headers aanmaken voor tabel
+                if i == 0:
+                    writer.writerow(['File-Name:', 'File-type:'])
+                #anderzijds write hij de data naar de file
+                print "Compound-file found..."
+                writer.writerow(querie7[i])
+                #itereren over de rows uit de database
+                i = i + 1
+        print "Er is een rapport gegenereerd met daarin alle duplicates uit de image"
+        print "Deze is te vinden in: "+ reportCompound
+        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
+        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        time.sleep(10)
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    if(optie == 100):
+        print "Het programma wordt over 3 seconden afgesloten..."
+        connectie.close()
+        time.sleep(3)
+        sys.exit()
+
+

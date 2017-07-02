@@ -1,0 +1,39 @@
+#Requirement C.1.1.16: Rapportage over ongebruikelijke zaken
+    if(optie == 17):
+        #select de bestanden ongebruikelijke zaken bevatten
+        c.execute("select file_name, file_extension "
+                  "from Files "
+                  "where file_name "
+                  "LIKE '%Confidential%' or file_name like '%Vertrouwelijk%' or file_name like '%Porn%' or file_name like '%Abuse%' or file_name like '%Misbruik%' or file_name like '%Mishandeling%' or file_name like '%Fraud%'")
+
+        #maak een waarde aan die de informatie uit de SQL querie overneemt.
+        querie17 = c.fetchall()
+        #opslagfile maken voor compound files
+        reportCompound = locatieReports + "Ongebruikelijke_Zaken.csv"
+
+        #maak reportfile aan
+        with open(reportCompound, 'w') as csvfile:
+            writer = csv.writer(csvfile, delimiter=",")
+            i = 0
+            #voor elke row uit de select hierboven
+            while i < len(querie17):
+                #Headers aanmaken voor tabel
+                if i == 0:
+                    writer.writerow(['File-Name:', 'File-type:'])
+                #anderzijds write hij de data naar de file
+                print "Compound-file found..."
+                writer.writerow(querie17[i])
+                #itereren over de rows uit de database
+                i = i + 1
+        print "Er is een rapport gegenereerd met een overzicht van de gevonden ongebruikelijke zaken"
+        print "Deze is te vinden in: "+ reportCompound
+        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
+        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        time.sleep(10)
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    if(optie == 100):
+        print "Het programma wordt over 3 seconden afgesloten..."
+        connectie.close()
+        time.sleep(3)
+        sys.exit()

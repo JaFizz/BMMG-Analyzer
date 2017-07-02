@@ -1,0 +1,39 @@
+#Requirement C.1.1.12: Sporen vinden van VPN en Citrix
+    if(optie == 13):
+        #select de bestanden die sporen van VPN en Citrix bevatten
+        c.execute("select file_name, file_extension "
+                  "from Files "
+                  "where file_name "
+                  "LIKE '%Crypt%' or file_name like '%Lock%' or file_name like '%Safe%'")
+
+        #maak een waarde aan die de informatie uit de SQL querie overneemt.
+        querie13 = c.fetchall()
+        #opslagfile maken voor compound files
+        reportCompound = locatieReports + "VPN_Citrix.csv"
+
+        #maak reportfile aan
+        with open(reportCompound, 'w') as csvfile:
+            writer = csv.writer(csvfile, delimiter=",")
+            i = 0
+            #voor elke row uit de select hierboven
+            while i < len(querie13):
+                #Headers aanmaken voor tabel
+                if i == 0:
+                    writer.writerow(['File-Name:', 'File-type:'])
+                #anderzijds write hij de data naar de file
+                print "Compound-file found..."
+                writer.writerow(querie13[i])
+                #itereren over de rows uit de database
+                i = i + 1
+        print "Er is een rapport gegenereerd met een overzicht van de bestanden die sporen van VPN's en Citrix"
+        print "Deze is te vinden in: "+ reportCompound
+        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
+        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        time.sleep(10)
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    if(optie == 100):
+        print "Het programma wordt over 3 seconden afgesloten..."
+        connectie.close()
+        time.sleep(3)
+        sys.exit()
