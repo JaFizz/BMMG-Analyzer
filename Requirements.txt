@@ -74,11 +74,76 @@
 
     if (optie == 6):
         # Requirement 1.1.3
+        import datetime
+
+        tabelMetaData = 'file_metadata_requirement_1_1_3'
+
+        # Metadata tabel maken
+        c.execute('CREATE TABLE {tabelnaam} ({kolomnaam} {datatype})'.format(tabelnaam=tabelMetaData,
+                                                                             kolomnaam=kolomFileName,
+                                                                             datatype=textDataType))
+        # Nieuwe kolommen toevoegen
+        c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                  .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileExtractNameLocation, datatype=textDataType))
+        c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                  .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileExtension, datatype=textDataType))
+        c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                  .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileCreationTime, datatype=textDataType))
+        c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                  .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileModificationTime, datatype=textDataType))
+        c.execute("ALTER TABLE {tabelnaam} ADD COLUMN '{kolomnaam}' {datatype}"
+                  .format(tabelnaam=tabelMetaData, kolomnaam=kolomFileAccesTime, datatype=textDataType))
+
+        connectie.commit()
+
+        # tijd omzetten van unix naar normal time
+        def generateTime(unixTime):
+            return (datetime.datetime.fromtimestamp(
+                int(unixTime)
+                # format van de timenotatie
+            ).strftime('%Y-%m-%d %H:%M:%S'))
+
         c.execute(
             "select file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
             "from Files "
             "where file_extension "
             "LIKE '.pdf' or file_extension like '.doc' or file_extension like '.jpg' or file_extension like '.png'")
+
+        UNIXTime = c.fetchall()
+        for value in UNIXTime:
+            fileName = value[0]
+            filePlaats = value[1]
+            fileExtensie = value[2]
+            try:
+                UNIXreturn1 = generateTime(value[3])
+                UNIXreturn2 = generateTime(value[4])
+                UNIXreturn3 = generateTime(value[5])
+            except:
+                print ""
+
+            try:
+                print "--------------NEW FILE-------------------"
+                print UNIXreturn1 + " = Creation time"
+                print UNIXreturn2 + " = Modification time"
+                print UNIXreturn3 + " = Acces time\n"
+
+                # file_metadata tabel vullen
+                c.execute(
+                    "INSERT INTO {tabelnaam} ({kolomnaam1},{kolomnaam2},{kolomnaam3},{kolomnaam4},{kolomnaam5},{kolomnaam6})"
+                    " VALUES ('{value1}','{value2}','{value3}','{value4}','{value5}','{value6}')"
+                    .format(tabelnaam=tabelMetaData, kolomnaam1=kolomFileName, kolomnaam2=kolomFileExtractNameLocation,
+                            kolomnaam3=kolomFileExtension,
+                            kolomnaam4=kolomFileCreationTime, kolomnaam5=kolomFileModificationTime,
+                            kolomnaam6=kolomFileAccesTime,
+                            value1=fileName, value2=filePlaats, value3=fileExtensie, value4=UNIXreturn1,
+                            value5=UNIXreturn2, value6=UNIXreturn3))
+
+                connectie.commit()
+
+            except:
+                print ""
+
+
         # commit
         connectie.commit()
 
