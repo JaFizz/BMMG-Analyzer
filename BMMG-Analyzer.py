@@ -12,8 +12,7 @@ import pytsk3
 import binascii
 import hashlib
 import csv
-#from termcolor import colored
-
+import logging
 
 #VARIABELEN
 d = datetime.datetime.now()
@@ -25,6 +24,35 @@ werkMap = "BMMG_Werkmap"
 saveFileMap = "/case_info/"
 extractsMap = "/extracts/"
 reportsMap = "/reports/"
+
+# opslaglocatie laten kiezen
+logLocatie = filedialog.askdirectory(title='Geef aan in welke map u het logbestand wilt opslaan.')
+if not logLocatie:
+    logLocatie = filedialog.askdirectory(title='Geef aan in welke map u het logbestand wilt opslaan.'
+                                               '\nKies nu een map, anders wordt het programma afgesloten!')
+    if not logLocatie:
+        print(
+            "Geen opslaglocatie gekozen, er wordt een map aangemaakt in de map waarin het script staat...\n")
+if not os.path.exists(logLocatie):
+    os.makedirs(logLocatie)
+logLocatie2 = logLocatie + "/Logging.log"
+
+#create logger
+# set up logging to file - see previous section for more details
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename=logLocatie2,
+                    filemode='w')
+# define a Handler which writes INFO messages or higher to the sys.stderr
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+# set a format which is simpler for console use
+formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+# tell the handler to use this format
+console.setFormatter(formatter)
+# add the handler to the root logger
+logging.getLogger('').addHandler(console)
 
 #SQL Tabelnamen en Kolomnamen
 kolomCasusNaam = 'casus_naam'
@@ -47,7 +75,6 @@ kolomFileExtractNameLocation = 'file_extract_name'
 tabelMetaData = 'file_metadata_requirement_1_1_3'
 tabelMetaData2 = 'file_metadata_requirement_1_1_7'
 tabelPDF_TIFF = 'tabelPDF_TIFF'
-
 
 #kolomDataBLOB = 'data_blob'
 
@@ -81,31 +108,31 @@ hexwaardes = {
 
 #FUNCTIE nieuwe casus
 def nieuweCasusToevoegen():
-    print("\nEen nieuwe casus toevoegen")
+    logging.info("\nEen nieuwe casus toevoegen")
 
     #casusnaam invoeren - foutafvanging moet nog
     casusNaam = raw_input(str("Casus Naam: "))
     casusNaam = "BMMG_Casus_" + casusNaam
     if not casusNaam:
         casusNaam = ("BMMG_Casus_" + str(randint(0,99999999)))
-        print("Casus Naam: " + casusNaam)
+        logging.info("Casus Naam: " + casusNaam)
     casusNaam = casusNaam.replace(" ", "_")
 
     #onderzoekernaam invoeren
     onderzoekerNaam = str(raw_input("Onderzoeker Naam: "))
     if not onderzoekerNaam:
         onderzoekerNaam = "Unknown"
-        print("Onderzoeker Naam: "+onderzoekerNaam+"\n")
+        logging.info("Onderzoeker Naam: "+onderzoekerNaam+"\n")
 
     #opslaglocatie laten kiezen
     opslagLocatie = filedialog.askdirectory(title='Geef aan in welke map u de casusbestanden wilt opslaan.'
-                                                      '\nIn deze map worden de savefile en extracties opgeslagen')
+                                                  '\nIn deze map worden de savefile en extracties opgeslagen')
     if not opslagLocatie:
         opslagLocatie = filedialog.askdirectory(title='Geef aan in welke map u de casusbestanden wilt opslaan.'
-                                                          '\nIn deze map worden de savefile en extracties opgeslagen\n'
-                                                          'Kies nu een map, anders wordt het programma afgesloten!')
+                                                      '\nIn deze map worden de savefile en extracties opgeslagen\n'
+                                                      'Kies nu een map, anders wordt het programma afgesloten!')
         if not opslagLocatie:
-            print "Geen opslaglocatie gekozen, er wordt een map aangemaakt in de map waarin het script staat...\n"
+            logging.info("Geen opslaglocatie gekozen, er wordt een map aangemaakt in de map waarin het script staat...\n")
 
     ###mappen aanmaken
     #werkmap aanmaken in de opslaglocatie
@@ -153,23 +180,23 @@ def nieuweCasusToevoegen():
     connectie.commit()
 
     if onderzoekerNaam == "Unknown":
-        print("Welkom! De casus is aangemaakt.\n"
-              "De savefile: '" + databaseBestandNaam + "' is aangemaakt.\n"
-                                             "De savefile is te vinden in de map: "+casusInfoMap+"\n"
-                                                                                             "Met behulp van de savefile kunt u verdergaan met de casus wanneer u wilt.\n")
+        logging.info("Welkom! De casus is aangemaakt.\n"
+                     "De savefile: '" + databaseBestandNaam + "' is aangemaakt.\n"
+                                                              "De savefile is te vinden in de map: "+casusInfoMap+"\n"
+                                                                                                                  "Met behulp van de savefile kunt u verdergaan met de casus wanneer u wilt.\n")
     else:
-        print("Welkom " + onderzoekerNaam + "! De casus is aangemaakt.\n"
-                                            "De savefile: '" + databaseBestandNaam + "' is aangemaakt.\n"
-                                                                           "De savefile is te vinden in de map: "+casusInfoMap+"\n"
-                                                                           "Met behulp van de savefile kunt u verdergaan met de casus wanneer u wilt.\n")
+        logging.info("Welkom " + onderzoekerNaam + "! De casus is aangemaakt.\n"
+                                                   "De savefile: '" + databaseBestandNaam + "' is aangemaakt.\n"
+                                                                                            "De savefile is te vinden in de map: "+casusInfoMap+"\n"
+                                                                                                                                                "Met behulp van de savefile kunt u verdergaan met de casus wanneer u wilt.\n")
 
     #imagebestand openen
-    print("Geef image-bestand op:")
+    logging.info("Geef image-bestand op:")
     imageBestand = filedialog.askopenfilename(initialdir = "/",title = "Geef image-bestand op:",filetypes = (("E01","*.E01"),("all files","*.*")))
     if not imageBestand:
         imageBestand = filedialog.askopenfilename(initialdir = "/",title = "Geef image-bestand op:",filetypes = (("E01","*.E01"),("all files","*.*")))
         if not imageBestand:
-            print "Twee keer geen imagebestand opgegeven, het programma wordt nu afgesloten"
+            logging.info("Twee keer geen imagebestand opgegeven, het programma wordt nu afgesloten")
             time.sleep(4)
             sys.exit()
 
@@ -177,8 +204,8 @@ def nieuweCasusToevoegen():
     imageName1 = os.path.splitext(os.path.basename(imageBestand))[0]
     extensie = os.path.splitext(imageBestand)[1]
     imageName = imageName1 + extensie
-    print("\n"+imageName + " is toegevoegd aan de casus.\n")
-    print "BMMG-Analyzer gaat nu bestanden extraheren, dit kan even duren...\n"
+    logging.info("\n"+imageName + " is toegevoegd aan de casus.\n")
+    logging.info("BMMG-Analyzer gaat nu bestanden extraheren, dit kan even duren...\n")
     time.sleep(5)
 
     #ImageBestand tabel maken
@@ -204,14 +231,14 @@ def nieuweCasusToevoegen():
 
 #FUNCTIE bestaande casus
 def bestaandeCasusOpenen():
-    print("\nEen bestaande casus openen")
+    logging.info("\nEen bestaande casus openen")
 
     #databasebestand laten kiezen
     databaseBestand = filedialog.askopenfilename(initialdir = "/",title = "Open een bestaande casus(.BMMG-extensie):",filetypes = (("BMMG-Casus","*.BMMG"),))
     if not databaseBestand:
         databaseBestand = filedialog.askopenfilename(initialdir = "/",title = "Open een bestaande casus:",filetypes = (("BMMG-Casus","*.BMMG"),))
         if not databaseBestand:
-            print "Twee keer geen savefile opgegeven, het programma wordt afgesloten"
+            logging.info("Twee keer geen savefile opgegeven, het programma wordt afgesloten")
             time.sleep(5)
             sys.exit()
 
@@ -229,8 +256,8 @@ def bestaandeCasusOpenen():
     c.execute('SELECT * FROM {tabelnaam}'. \
               format(tabelnaam=casusNaamInfo))
     dataUitDB = c.fetchone()[0]
-    print("\nDe casus: '"+ dataUitDB + "' is geopend.")
-    print "U wordt doorgestuurd naar het werkmenu..."
+    logging.info("\nDe casus: '"+ dataUitDB + "' is geopend.")
+    logging.info("U wordt doorgestuurd naar het werkmenu...")
     time.sleep(5)
 
     #imagebestandlocatie opvragen uit database
@@ -311,9 +338,9 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
                                 bestand = open(extractName, 'w')
                                 bestand.write(file.read_random(0, file.info.meta.size))
                                 bestand.close()
-                                print "\n\n-----------------------------------------FILE---------------------------------------------------"
-                                print filename + " extracted.\nFiledirectory: " + extractName
-                                print "-----------------------------------------------------------------------------------------BMMG-Analyzer\n"
+                                print("\n\n-----------------------------------------FILE---------------------------------------------------")
+                                logging.info(filename + " extracted.\nFiledirectory: " + extractName)
+                                print("-----------------------------------------------------------------------------------------BMMG-Analyzer\n")
 
                                 #MD5 hashwaarde berekenen
                                 hashValue =  hashlib.md5(open(extractName, 'rb').read()).hexdigest()
@@ -336,10 +363,10 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
 
                                     #ImageBestand tabel vullen
                                     c.execute("INSERT INTO {tabelnaam} ({kolomnaam1},{kolomnaam2},{kolomnaam3},{kolomnaam4},{kolomnaam5},{kolomnaam6},{kolomnaam7})"
-                                    " VALUES ('{value1}','{value2}','{value3}','{value4}','{value5}','{value6}','{value7}')"
-                                    .format(tabelnaam=tabelFiles, kolomnaam1=kolomFileName, kolomnaam2=kolomFileExtension, kolomnaam3=kolomFileHash,
-                                            kolomnaam4=kolomFileAccesTime, kolomnaam5=kolomFileModificationTime, kolomnaam6=kolomFileCreationTime, kolomnaam7=kolomFileExtractNameLocation,
-                                            value1=filename, value2=extensie, value3=hashValue, value4=accesTime, value5=modificationTime, value6=creationTime, value7=extractName))
+                                              " VALUES ('{value1}','{value2}','{value3}','{value4}','{value5}','{value6}','{value7}')"
+                                              .format(tabelnaam=tabelFiles, kolomnaam1=kolomFileName, kolomnaam2=kolomFileExtension, kolomnaam3=kolomFileHash,
+                                                      kolomnaam4=kolomFileAccesTime, kolomnaam5=kolomFileModificationTime, kolomnaam6=kolomFileCreationTime, kolomnaam7=kolomFileExtractNameLocation,
+                                                      value1=filename, value2=extensie, value3=hashValue, value4=accesTime, value5=modificationTime, value6=creationTime, value7=extractName))
                                     #commit
                                     connectie.commit()
                     except:
@@ -360,10 +387,10 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
                 checkDirectory(handle)
             except IOError as error:
                 #error == Unable to open the image as a filesystem: Cannot determine file system type
-                print ">>>>>>>>>>>>>>"
+                print(">>>>>>>>>>>>>>")
 
     except:
-        print "Extractie succesvol, u wordt doorgestuurd naar het werkmenu..."
+        logging.info("Extractie succesvol, u wordt doorgestuurd naar het werkmenu...")
     time.sleep(5)
     werkMenu(casusNaam, connectie, c, imageBestand)
 
@@ -406,16 +433,13 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
     #optie kiezen in het werkmenu
     optie = int(raw_input("\nKies een optie: "))
     if not optie:
-        print "Stap 2"
         optie = int(raw_input("\nKies een optie. Vul een optie van hierboven in!!!: "))
-        print "Stap 3"
         if not optie:
-            optie = int(raw_input("\nKies een optie. Vul een optie van hierboven in!!!: "))
-            print ("Twee keer geen optie opgegeven, het programma wordt afgesloten")
+            logging.info ("Twee keer geen optie opgegeven, het programma wordt afgesloten")
             time.sleep(3)
             sys.exit()
 
-###OPTIES#######
+    ######OPTIES#######
 
     #Casusinformatie opvragen
     if(optie == 1):
@@ -427,10 +451,10 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
             dataCasusNaam = value[0]
             dataOnderzoeker = value[1]
             dataCasusMap = value[2]
-            print"\nCasus Naam: "+ dataCasusNaam
-            print "Onderzoeker: " + dataOnderzoeker
-            print "Casusmap: " + dataCasusMap + "\n"
-            print "U wordt automatisch teruggestuurd naar het werkmenu..."
+            logging.info(("\nCasus Naam: ") + dataCasusNaam)
+            logging.info(("Onderzoeker: ") + dataOnderzoeker)
+            logging.info(("Casusmap: ") + dataCasusMap + "\n")
+            logging.info("U wordt automatisch teruggestuurd naar het werkmenu...")
             time.sleep(5)
 
         #weer naar werkmenu
@@ -438,7 +462,7 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
 
     #Requirement C.1.1.1: Compound files inzichtelijk maken
     if(optie == 2):
-        print "BMMG-Analyzer is bezig..."
+        logging.info("BMMG-Analyzer is bezig...")
         #select compound files from database
         c.execute("SELECT file_name, file_extension "
                   "FROM Files "
@@ -460,21 +484,21 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                 if i == 0:
                     writer.writerow(['File-Name:', 'File-type:'])
                 #anderzijds write hij de data naar de file
-                print "Compound-file found..."
+                logging.info("Compound-file found...")
                 writer.writerow(querie4[i])
                 #itereren over de rows uit de database
                 i = i + 1
-        print "Er is een rapport gegenereerd met daarin alle Compound-Files"
-        print "Dit rapport is te vinden in de map: "+ reportCompound
-        print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
-        print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
+        logging.info("Er is een rapport gegenereerd met daarin alle Compound-Files")
+        logging.info("Dit rapport is te vinden in de map: "+ reportCompound)
+        logging.info("De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts)
+        logging.info("U wordt nu automatisch teruggestuurd naar het werkmenu...")
         time.sleep(10)
         #terug naar werkmenu
         werkMenu(casusNaam, connectie, c, imageBestand)
 
     #Requirement C.1.1.2: Text uit bestanden inzichtelijk maken (TXT + DOC)
     if (optie == 3):
-        print ""
+        logging.info("")
         #terug naar werkmenu
         werkMenu(casusNaam, connectie, c, imageBestand)
 
@@ -526,14 +550,14 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                     UNIXreturn2 = generateTime(value[4])
                     UNIXreturn3 = generateTime(value[5])
                 except:
-                    print ""
+                    print("")
 
                 try:
-                    print "--------------NEW FILE-------------------"
-                    print "Filename: " + fileName
-                    print UNIXreturn1 + " = Creation time"
-                    print UNIXreturn2 + " = Modification time"
-                    print UNIXreturn3 + " = Acces time\n"
+                    print("--------------NEW FILE-------------------")
+                    logging.info("Filename: " + fileName)
+                    logging.info("Creation time: "+UNIXreturn1)
+                    logging.info("Modification time: "+UNIXreturn2)
+                    logging.info("Acces time: " +UNIXreturn3 + "\n")
 
                     #file_metadata tabel vullen
                     c.execute(
@@ -549,10 +573,10 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                     connectie.commit()
 
                 except:
-                    print ""
+                    print("")
 
             #report maken van gemaakte tabel hierboven
-            print "BMMG-Analyzer is bezig..."
+            logging.info("BMMG-Analyzer is bezig...")
 
             c.execute("SELECT file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
                       "FROM file_metadata_requirement_1_1_3 ")
@@ -573,20 +597,20 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                     writer.writerow(query[i])
                     #itereren over de rows uit de database
                     i = i + 1
-            print "Er is een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG."
-            print "Dit rapport is te vinden in de map: "+ reportMetadata
-            print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
-            print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
+            logging.info("Er is een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG.")
+            logging.info("Dit rapport is te vinden in de map: "+ reportMetadata)
+            logging.info("De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts)
+            logging.info("U wordt nu automatisch teruggestuurd naar het werkmenu...")
             time.sleep(8)
 
             #terug naar werkmenu
             werkMenu(casusNaam, connectie, c, imageBestand)
 
         except:
-            print "Er is reeds een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG."
-            print "Dit rapport is te vinden in de map: "+ reportMetadata
-            print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
-            print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
+            logging.info("Er is reeds een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG.")
+            logging.info("Dit rapport is te vinden in de map: "+ reportMetadata)
+            logging.info("De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts)
+            logging.info("U wordt nu automatisch teruggestuurd naar het werkmenu...")
             time.sleep(8)
 
             #terug naar werkmenu
@@ -594,25 +618,80 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
 
     #Requirement C.1.1.4: Taalherkenning op de bestanden TXT en DOC
     if (optie == 5):
-        print ""
+        print("")
         #terug naar werkmenu
         werkMenu(casusNaam, connectie, c, imageBestand)
 
     #Requirement C.1.1.5: Text en metadata inzichtelijk maken van DOC, TXT
     if (optie == 6):
-        print ""
+        print("")
         #terug naar werkmenu
         werkMenu(casusNaam, connectie, c, imageBestand)
 
     #Requirement C.1.1.6: Duplicaten inzichtelijk maken
     if (optie == 7):
-        print ""
-        #terug naar werkmenu
-        werkMenu(casusNaam, connectie, c, imageBestand)
+        # Requirement 1.1.6
+
+        optieMap9 = locatieReports + "Duplicaten.csv"
+
+        # Tabel tabelDuplicates aanmaken met de volgende kolommen: file_name, file_md5_hash en file_aantal_duplicates
+        try:
+            sql_command = """CREATE TABLE tabelDuplicates AS
+                           SELECT file_name as 'file_name',
+                           file_md5_hash as 'file_md5_hash',
+                           count(*) as 'file_aantal_duplicates'
+                           FROM Files
+                           GROUP BY file_md5_hash HAVING count(*) > 1
+                           ORDER BY file_name DESC """
+
+            # Voer code uit
+            c.execute(sql_command)
+            # commit
+            connectie.commit()
+
+        except:
+            print("")
+
+        c.execute("SELECT file_name, file_md5_hash, file_aantal_duplicates "
+                  "FROM tabelDuplicates ")
+
+        querie9 = c.fetchall()
+
+        for value in querie9:
+            fileName = value[0]
+            hashValue = value[1]
+            aantal = value[2]
+
+            # maak reportfile aan
+            with open(optieMap9, 'w') as csvfile:
+                writer = csv.writer(csvfile, delimiter=",")
+                i = 0
+                # voor elke row uit de select hierboven
+                while i < len(querie9):
+                    # Headers aanmaken voor tabel
+                    if i == 0:
+                        writer.writerow(['File-Name:', 'File-md5-Hash:', 'File_aantal_duplicates:'])
+
+                    # anderzijds write hij de data naar de file
+                    logging.info("Duplicates found...")
+                    try:
+                        writer.writerow(querie9[i])
+                    except:
+                        pass
+                    # itereren over de rows uit de database
+                    i = i + 1
+            logging.info("Er is een rapport gegenereerd met daarin alle Duplicaten.")
+            logging.info("Dit rapport is te vinden in de map: " + optieMap9)
+            logging.info("De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts)
+            logging.info("U wordt nu automatisch teruggestuurd naar het werkmenu...")
+            time.sleep(8)
+
+            # terug naar werkmenu
+            werkMenu(casusNaam, connectie, c, imageBestand)
 
     #Requirement C.1.1.7: Metadata inzichtelijk maken van bestanden JPG, JPEG, PNG, TIFF
     if (optie == 8):
-        #opslagfile maken voor compound files
+        #opslagfile maken voor metadata
         reportMetadata2 = locatieReports + "Metadata_JPG_JPEG_PNG_TIFF.csv"#select from database
 
         try:
@@ -657,14 +736,14 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                     UNIXreturn2 = generateTime(value[4])
                     UNIXreturn3 = generateTime(value[5])
                 except:
-                    print ""
+                    print("")
 
                 try:
-                    print "--------------NEW FILE-------------------"
-                    print "Filename: " + fileName
-                    print UNIXreturn1 + " = Creation time"
-                    print UNIXreturn2 + " = Modification time"
-                    print UNIXreturn3 + " = Acces time\n"
+                    print("--------------NEW FILE-------------------")
+                    logging.info("Filename: " + fileName)
+                    logging.info("Creation time: "+UNIXreturn1)
+                    logging.info("Modification time: "+UNIXreturn2)
+                    logging.info("Acces time: " +UNIXreturn3 + "\n")
 
                     #file_metadata tabel vullen
                     c.execute(
@@ -680,10 +759,10 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                     connectie.commit()
 
                 except:
-                    print ""
+                    print("")
 
             #report maken van gemaakte tabel hierboven
-            print "BMMG-Analyzer is bezig..."
+            logging.info("BMMG-Analyzer is bezig...")
 
             c.execute("SELECT file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
                       "FROM file_metadata_requirement_1_1_7 ")
@@ -704,20 +783,20 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                     writer.writerow(query[i])
                     #itereren over de rows uit de database
                     i = i + 1
-            print "Er is een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG."
-            print "Dit rapport is te vinden in de map: "+ reportMetadata2
-            print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
-            print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
+            logging.info("Er is een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG.")
+            logging.info("Dit rapport is te vinden in de map: "+ reportMetadata2)
+            logging.info("De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts)
+            logging.info("U wordt nu automatisch teruggestuurd naar het werkmenu...")
             time.sleep(8)
 
             #terug naar werkmenu
             werkMenu(casusNaam, connectie, c, imageBestand)
 
         except:
-            print "Er is reeds een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG."
-            print "Dit rapport is te vinden in de map: "+ reportMetadata2
-            print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
-            print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
+            logging.info("Er is reeds een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG.")
+            logging.info("Dit rapport is te vinden in de map: "+ reportMetadata2)
+            logging.info("De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts)
+            logging.info("U wordt nu automatisch teruggestuurd naar het werkmenu...")
             time.sleep(8)
 
             #terug naar werkmenu
@@ -725,7 +804,7 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
 
     #Requirement C.1.1.8: Gebruikers inzichtelijk maken + taalherkenning
     if (optie == 9):
-        print ""
+        print("")
         #terug naar werkmenu
         werkMenu(casusNaam, connectie, c, imageBestand)
 
@@ -777,14 +856,14 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                     UNIXreturn2 = generateTime(value[4])
                     UNIXreturn3 = generateTime(value[5])
                 except:
-                    print ""
+                    print("")
 
                 try:
-                    print "--------------NEW FILE-------------------"
-                    print "Filename: " + fileName
-                    print UNIXreturn1 + " = Creation time"
-                    print UNIXreturn2 + " = Modification time"
-                    print UNIXreturn3 + " = Acces time\n"
+                    print("--------------NEW FILE-------------------")
+                    logging.info("Filename: " + fileName)
+                    logging.info("Creation time: "+UNIXreturn1)
+                    logging.info("Modification time: "+UNIXreturn2)
+                    logging.info("Acces time: " +UNIXreturn3 + "\n")
 
                     #file_metadata tabel vullen
                     c.execute(
@@ -800,10 +879,10 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                     connectie.commit()
 
                 except:
-                    print ""
+                    print("")
 
             #report maken van gemaakte tabel hierboven
-            print "BMMG-Analyzer is bezig..."
+            logging.info("BMMG-Analyzer is bezig...")
 
             c.execute("SELECT file_name, file_extract_name, file_extension, file_creation_time, file_modification_time, file_acces_time "
                       "FROM tabelPDF_TIFF ")
@@ -824,20 +903,20 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                     writer.writerow(query[i])
                     #itereren over de rows uit de database
                     i = i + 1
-            print "Er is een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG."
-            print "Dit rapport is te vinden in de map: "+ reportMetadata2
-            print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
-            print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
+            logging.info("Er is een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG.")
+            logging.info("Dit rapport is te vinden in de map: "+ reportMetadata2)
+            logging.info("De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts)
+            logging.info("U wordt nu automatisch teruggestuurd naar het werkmenu...")
             time.sleep(8)
 
             #terug naar werkmenu
             werkMenu(casusNaam, connectie, c, imageBestand)
 
         except:
-            print "Er is reeds een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG."
-            print "Dit rapport is te vinden in de map: "+ reportMetadata2
-            print "De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts
-            print "U wordt nu automatisch teruggestuurd naar het werkmenu..."
+            logging.info("Er is reeds een rapport gegenereerd met daarin alle Metadata van de bestanden PDF, DOC, JPG, PNG.")
+            logging.info("Dit rapport is te vinden in de map: "+ reportMetadata2)
+            logging.info("De bestanden uit dit rapport kunt u terugvinden in de map: " + locatieExtracts)
+            logging.info("U wordt nu automatisch teruggestuurd naar het werkmenu...")
             time.sleep(8)
 
             #terug naar werkmenu
@@ -866,14 +945,14 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                 if i == 0:
                     writer.writerow(['File-Name:', 'File-type:'])
                 #anderzijds write hij de data naar de file
-                print "Social Media found..."
+                logging.info("Social Media found...")
                 writer.writerow(querie11[i])
                 #itereren over de rows uit de database
                 i = i + 1
-        print "Er is een rapport gegenereerd met een overzicht van bestanden m.b.t. social media."
-        print "Dit rapport is te vinden in: "+ reportCompound
-        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
-        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        logging.info("Er is een rapport gegenereerd met een overzicht van bestanden m.b.t. social media.")
+        logging.info("Dit rapport is te vinden in: "+ reportCompound)
+        logging.info("De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts)
+        logging.info("U wordt automatisch teruggestuurd naar het werkmenu...")
         time.sleep(10)
         werkMenu(casusNaam, connectie, c, imageBestand)
 
@@ -899,14 +978,14 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                 if i == 0:
                     writer.writerow(['File-Name:', 'File-type:'])
                 #anderzijds write hij de data naar de file
-                print "Encryption found..."
+                logging.info("Encryption found...")
                 writer.writerow(querie11[i])
                 #itereren over de rows uit de database
                 i = i + 1
-        print "Er is een rapport gegenereerd met een overzicht van bestanden m.b.t. encryptie van data."
-        print "Dit rapport is te vinden in: "+ reportCompound
-        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
-        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        logging.info("Er is een rapport gegenereerd met een overzicht van bestanden m.b.t. encryptie van data.")
+        logging.info("Dit rapport is te vinden in: "+ reportCompound)
+        logging.info("De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts)
+        logging.info("U wordt automatisch teruggestuurd naar het werkmenu...")
         time.sleep(10)
         werkMenu(casusNaam, connectie, c, imageBestand)
 
@@ -932,14 +1011,14 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                 if i == 0:
                     writer.writerow(['File-Name:', 'File-type:'])
                 #anderzijds write hij de data naar de file
-                print "VPN/Citrix found..."
+                logging.info("VPN/Citrix found...")
                 writer.writerow(querie11[i])
                 #itereren over de rows uit de database
                 i = i + 1
-        print "Er is een rapport gegenereerd met een overzicht van bestanden m.b.t. VPN/Citrix."
-        print "Dit rapport is te vinden in: "+ reportCompound
-        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
-        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        logging.info("Er is een rapport gegenereerd met een overzicht van bestanden m.b.t. VPN/Citrix.")
+        logging.info("Dit rapport is te vinden in: "+ reportCompound)
+        logging.info("De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts)
+        logging.info("U wordt automatisch teruggestuurd naar het werkmenu...")
         time.sleep(10)
         werkMenu(casusNaam, connectie, c, imageBestand)
 
@@ -965,14 +1044,14 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                 if i == 0:
                     writer.writerow(['File-Name:', 'File-type:'])
                 #anderzijds write hij de data naar de file
-                print "Applications found..."
+                logging.info("Applications found...")
                 writer.writerow(querie11[i])
                 #itereren over de rows uit de database
                 i = i + 1
-        print "Er is een rapport gegenereerd met een overzicht van applicaties die zijn gevonden."
-        print "Dit rapport is te vinden in: "+ reportCompound
-        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
-        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        logging.info("Er is een rapport gegenereerd met een overzicht van applicaties die zijn gevonden.")
+        logging.info("Dit rapport is te vinden in: "+ reportCompound)
+        logging.info("De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts)
+        logging.info("U wordt automatisch teruggestuurd naar het werkmenu...")
         time.sleep(10)
         werkMenu(casusNaam, connectie, c, imageBestand)
 
@@ -998,14 +1077,14 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                 if i == 0:
                     writer.writerow(['File-Name:', 'File-type:'])
                 #anderzijds write hij de data naar de file
-                print "System files found..."
+                logging.info("System files found...")
                 writer.writerow(querie11[i])
                 #itereren over de rows uit de database
                 i = i + 1
-        print "Er is een rapport gegenereerd met een overzicht van system files."
-        print "Dit rapport is te vinden in: "+ reportCompound
-        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
-        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        logging.info("Er is een rapport gegenereerd met een overzicht van system files.")
+        logging.info("Dit rapport is te vinden in: "+ reportCompound)
+        logging.info("De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts)
+        logging.info("U wordt automatisch teruggestuurd naar het werkmenu...")
         time.sleep(10)
         werkMenu(casusNaam, connectie, c, imageBestand)
 
@@ -1017,9 +1096,9 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
         partitionTable = pytsk3.Volume_Info(imagehandle)
         # print partitie tabel
         for partition in partitionTable:
-            print partition.addr, partition.desc, "%ss(%s)" % (partition.start, partition.start * 512), partition.len
+            print(partition.addr, partition.desc, "%ss(%s)" % (partition.start, partition.start * 512), partition.len)
 
-        print "U wordt automatisch teruggestuurd naar het werkmenu"
+        logging.info("\nU wordt automatisch teruggestuurd naar het werkmenu")
         time.sleep(7)
         #terug naar werkmenu
         werkMenu(casusNaam, connectie, c, imageBestand)
@@ -1046,40 +1125,39 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
                 if i == 0:
                     writer.writerow(['File-Name:', 'File-type:'])
                 #anderzijds write hij de data naar de file
-                print "Bad files found..."
+                logging.info("Bad files found...")
                 writer.writerow(querie11[i])
                 #itereren over de rows uit de database
                 i = i + 1
-        print "Er is een rapport gegenereerd met ongebruikelijke zaken."
-        print "Dit rapport is te vinden in: "+ reportCompound
-        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
-        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        logging.info("Er is een rapport gegenereerd met ongebruikelijke zaken.")
+        logging.info("Dit rapport is te vinden in: "+ reportCompound)
+        logging.info("De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts)
+        logging.info("U wordt automatisch teruggestuurd naar het werkmenu...")
         time.sleep(10)
         werkMenu(casusNaam, connectie, c, imageBestand)
 
     if(optie == 100):
-        print "Het programma wordt over 3 seconden afgesloten..."
+        logging.info("Het programma wordt over 3 seconden afgesloten...")
         connectie.close()
         time.sleep(3)
         sys.exit()
 
-
 #MAIN CODE
 print(
-" ____   __  __  __  __   _____                                _                        \n"
-"|  _ \ |  \/  ||  \/  | / ____|          /\                  | |                       \n"
-"| |_) || \  / || \  / || |  __  ______  /  \    _ __    __ _ | | _   _  ____ ___  _ __ \n"
-"|  _ < | |\/| || |\/| || | |_ ||______|/ /\ \  | '_ \  / _` || || | | ||_  // _ \| '__|\n"
-"| |_) || |  | || |  | || |__| |       / ____ \ | | | || (_| || || |_| | / /|  __/| |   \n"
-"|____/ |_|  |_||_|  |_| \_____|      /_/    \_\|_| |_| \__,_||_| \__, |/___|\___||_|   \n"
-"                                                                  __/ |                \n"
-"                                                                 |___/ "+datum+" "+tijd+" \n"
-"===========================================================================================\n"
+    " ____   __  __  __  __   _____                                _                        \n"
+    "|  _ \ |  \/  ||  \/  | / ____|          /\                  | |                       \n"
+    "| |_) || \  / || \  / || |  __  ______  /  \    _ __    __ _ | | _   _  ____ ___  _ __ \n"
+    "|  _ < | |\/| || |\/| || | |_ ||______|/ /\ \  | '_ \  / _` || || | | ||_  // _ \| '__|\n"
+    "| |_) || |  | || |  | || |__| |       / ____ \ | | | || (_| || || |_| | / /|  __/| |   \n"
+    "|____/ |_|  |_||_|  |_| \_____|      /_/    \_\|_| |_| \__,_||_| \__, |/___|\___||_|   \n"
+    "                                                                  __/ |                \n"
+    "                                                                 |___/ "+datum+" "+tijd+" \n"
+    "===========================================================================================\n"
 )
 
-print("Goedendag, wat wilt u doen? \n")
-print("Optie 1: Een nieuwe casus toevoegen")
-print("Optie 2: Een bestaande casus openen\n")
+logging.info("Goedendag, wat wilt u doen? \n")
+logging.info("Optie 1: Een nieuwe casus toevoegen")
+logging.info("Optie 2: Een bestaande casus openen\n")
 
 #optie kiezen aan begin van programma
 try:
@@ -1088,7 +1166,7 @@ except:
     try:
         optie = int(raw_input("Kies een optie. Vul een cijfer in !!! "))
     except:
-        print("Twee keer geen optie opgegeven, het programma wordt afgesloten.")
+        logging.info("Twee keer geen optie opgegeven, het programma wordt afgesloten.")
         time.sleep(5)
         sys.exit()
 
