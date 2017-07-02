@@ -11,6 +11,9 @@ import os
 import pytsk3
 import binascii
 import hashlib
+import csv
+#from termcolor import colored
+
 
 #VARIABELEN
 d = datetime.datetime.now()
@@ -19,13 +22,14 @@ tijd = time.strftime("%X")
 
 #Mappen
 werkMap = "BMMG_Werkmap"
-saveFileMap = "/savefile/"
+saveFileMap = "/case_info/"
 extractsMap = "/extracts/"
+reportsMap = "/reports/"
 
 #SQL Tabelnamen en Kolomnamen
 kolomCasusNaam = 'casus_naam'
 kolomOnderzoekerNaam = 'onderzoeker_naam'
-kolomCasusMap = 'locatie_casusmap'
+kolomCasusMap = 'locatie_casusmap'  #locatie casus info map
 
 tabelImageBestand = "ImageBestand"
 kolomImageNaam = "image_naam"
@@ -106,14 +110,15 @@ def nieuweCasusToevoegen():
     casusMap = werkMapLocatie + "/" + casusNaam
     if not os.path.exists(casusMap):
         os.makedirs(casusMap)
-    #savefilemap aanmaken in casusmap
-    if not os.path.exists(casusMap + saveFileMap):
-        os.makedirs(casusMap + saveFileMap)
+    #infomap aanmaken in casusmap
+    casusInfoMap = casusMap + saveFileMap
+    if not os.path.exists(casusInfoMap):
+        os.makedirs(casusInfoMap)
 
     databaseBestandNaam = casusNaam + ".BMMG"
 
     #databasebestand maken in de savefilemap van de casusmap
-    databaseBestand = casusMap + saveFileMap + databaseBestandNaam
+    databaseBestand = casusInfoMap + databaseBestandNaam
 
     #connectie maken naar SQLite database
     connectie = sqlite3.connect(databaseBestand)
@@ -144,12 +149,12 @@ def nieuweCasusToevoegen():
     if onderzoekerNaam == "Unknown":
         print("Welkom! De casus is aangemaakt.\n"
               "De savefile: '" + databaseBestandNaam + "' is aangemaakt.\n"
-                                             "De savefile is te vinden in de map: "+casusMap+saveFileMap+"\n"
+                                             "De savefile is te vinden in de map: "+casusInfoMap+"\n"
                                                                                              "Met behulp van de savefile kunt u verdergaan met de casus wanneer u wilt.\n")
     else:
         print("Welkom " + onderzoekerNaam + "! De casus is aangemaakt.\n"
                                             "De savefile: '" + databaseBestandNaam + "' is aangemaakt.\n"
-                                                                           "De savefile is te vinden in de map: "+casusMap+saveFileMap+"\n"
+                                                                           "De savefile is te vinden in de map: "+casusInfoMap+"\n"
                                                                            "Met behulp van de savefile kunt u verdergaan met de casus wanneer u wilt.\n")
 
     #imagebestand openen
@@ -302,7 +307,7 @@ def extractor(casusNaam, connectie, c, imageBestand, extractsLocatie):
                                 bestand.close()
                                 print "\n\n-----------------------------------------FILE---------------------------------------------------"
                                 print filename + " extracted.\nFiledirectory: " + extractName
-                                print "---------------------------------------"+tijd+"------------------------------------BMMG-Analyzer\n"
+                                print "-----------------------------------------------------------------------------------------BMMG-Analyzer\n"
 
                                 #MD5 hashwaarde berekenen
                                 hashValue =  hashlib.md5(open(extractName, 'rb').read()).hexdigest()
@@ -364,46 +369,85 @@ def werkMenu(casusNaam, connectie, c, imageBestand):
     #casusnaaminfo maken voor de database
     casusNaamInfo = casusNaam+"_info"
 
+    #Locatie van de casusmap opvragen uit de database
+    c.execute("SELECT {kolomnaam} FROM {tabelnaam}"
+              .format(kolomnaam=kolomCasusMap, tabelnaam=casusNaamInfo))
+    locatieCMap = c.fetchone()[0]
+
+    #Reportsmap aanmaken
+    locatieReports = locatieCMap + reportsMap
+    if not os.path.exists(locatieReports):
+        os.makedirs(locatieReports)
+
+    locatieExtracts = locatieCMap + extractsMap
+
     #Werkmenu opties printen op scherm
-    print("Optie 1: Casusnaam opvragen")
-    print("Optie 2: ")
-    print("Optie 3: BMMG-Analyzer afsluiten")
+    print("Optie 1: Casusinformatie opvragen")
+    print("Optie 2: Compound Files inzichtelijk maken ")                                                                    #Requirement C.1.1.1
+    print("Optie 100: BMMG-Analyzer afsluiten")
 
     #optie kiezen in het werkmenu
-    try:
-        optie = raw_input("\nKies een optie: ")
+    optie = int(raw_input("\nKies een optie: "))
+    if not optie:
+        print "Stap 2"
+        optie = int(raw_input("\nKies een optie. Vul een optie van hierboven in!!!: "))
+        print "Stap 3"
         if not optie:
-            optie = raw_input("\nKies een optie. Vul een optie van hierboven in!!!: ")
-            if not optie:
-                optie = raw_input("\nKies een optie. Vul een optie van hierboven in!!!: ")
-                print ("Twee keer geen optie opgegeven, het programma wordt afgesloten")
-                time.sleep(3)
-                sys.exit()
-    except ValueError:
-        optie = raw_input("\nKies een optie. Vul een optie van hierboven in!!!: ")
-        if not optie:
-            optie = raw_input("\nKies een optie. Vul een optie van hierboven in!!!: ")
+            optie = int(raw_input("\nKies een optie. Vul een optie van hierboven in!!!: "))
             print ("Twee keer geen optie opgegeven, het programma wordt afgesloten")
             time.sleep(3)
             sys.exit()
 
 
 
-
+    #Casusinformatie opvragen
     if(optie == 1):
-    #casusnaam opvragen uit de database en printen op scherm
+        #casusnaam opvragen uit de database en printen op scherm
         c.execute('SELECT casus_naam FROM {tabelnaam}'
                   .format(tabelnaam=casusNaamInfo))
         dataUitDB = c.fetchone()
         print("\nCasus Naam: "+(dataUitDB[0]))
+        time.sleep(5)
+        print "U wordt automatisch teruggestuurd naar het werkmenu..."
 
         #weer naar werkmenu
         werkMenu(casusNaam, connectie, c, imageBestand)
 
+    #Requirement C.1.1.1: Compound files inzichtelijk maken
     if(optie == 2):
-        print "leeg"
+        #select compound files from database
+        c.execute("SELECT file_name, file_extension "
+                  "FROM Files "
+                  "WHERE file_extension "
+                  "LIKE '.doc' OR file_extension LIKE '.ppt' OR file_extension LIKE '.xls'")
 
-    if(optie == 3):
+        #maak een waarde aan die de informatie uit de SQL querie overneemt.
+        querie4 = c.fetchall()
+        #opslagfile maken voor compound files
+        reportCompound = locatieReports + "Compound_Files.csv"
+
+        #maak reportfile aan
+        with open(reportCompound, 'w') as csvfile:
+            writer = csv.writer(csvfile, delimiter=",")
+            i = 0
+            #voor elke row uit de select hierboven
+            while i < len(querie4):
+                #Headers aanmaken voor tabel
+                if i == 0:
+                    writer.writerow(['File-Name:', 'File-type:'])
+                #anderzijds write hij de data naar de file
+                print "Compound-file found..."
+                writer.writerow(querie4[i])
+                #itereren over de rows uit de database
+                i = i + 1
+        print "Er is een rapport gegenereerd met daarin alle Compound-Files"
+        print "Deze is te vinden in: "+ reportCompound
+        print "De bestanden in dit rapport kunt u terugvinden in: " + locatieExtracts
+        print "U wordt automatisch teruggestuurd naar het werkmenu..."
+        time.sleep(10)
+        werkMenu(casusNaam, connectie, c, imageBestand)
+
+    if(optie == 100):
         print "Het programma wordt over 3 seconden afgesloten..."
         connectie.close()
         time.sleep(3)
