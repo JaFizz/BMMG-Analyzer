@@ -112,11 +112,16 @@ def nieuweCasusToevoegen():
 
     #casusnaam invoeren - foutafvanging moet nog
     casusNaam = raw_input(str("Casus Naam: "))
-    casusNaam = "BMMG_Casus_" + casusNaam
     if not casusNaam:
         casusNaam = ("BMMG_Casus_" + str(randint(0,99999999)))
         logging.info("Casus Naam: " + casusNaam)
+
+    casusNaam = "BMMG_Casus_" + casusNaam
     casusNaam = casusNaam.replace(" ", "_")
+    casusNaam = casusNaam.replace("@", "_")
+    casusNaam = casusNaam.replace("!", "_")
+    casusNaam = casusNaam.replace("#", "_")
+    casusNaam = casusNaam.replace("$", "_")
 
     #onderzoekernaam invoeren
     onderzoekerNaam = str(raw_input("Onderzoeker Naam: "))
